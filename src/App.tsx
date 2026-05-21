@@ -24,7 +24,7 @@ function App() {
       case 'contact':
         return <Contact />
       case 'auth':
-        return <Auth />
+        return <Auth onNavigate={setCurrentPage} />
       default:
         return <Home />
     }

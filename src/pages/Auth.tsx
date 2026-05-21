@@ -1,8 +1,52 @@
 import React, { useState } from 'react';
-import { Mail, Lock, User, ArrowRight, Globe } from 'lucide-react';
+import { Mail, Lock, User, ArrowRight, Loader2 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
-const Auth: React.FC = () => {
+interface AuthProps {
+  onNavigate?: (page: string) => void;
+}
+
+const Auth: React.FC<AuthProps> = ({ onNavigate }) => {
   const [isLogin, setIsLogin] = useState(true);
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    fullName: ''
+  });
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const { login, register } = useAuth();
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    if (error) setError(null);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    try {
+      if (isLogin) {
+        await login({ email: formData.email, password: formData.password });
+      } else {
+        await register(formData);
+      }
+      
+      if (onNavigate) {
+        onNavigate('home');
+      } else {
+        window.location.href = '/';
+      }
+    } catch (err: any) {
+      setError(err.message || 'Có lỗi xảy ra, vui lòng thử lại.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-surface p-4 pt-20">
@@ -53,21 +97,35 @@ const Auth: React.FC = () => {
             <p className="text-gray-500 mb-8">
               {isLogin ? 'Chưa có tài khoản?' : 'Đã có tài khoản?'} 
               <button 
-                onClick={() => setIsLogin(!isLogin)}
+                onClick={() => {
+                  setIsLogin(!isLogin);
+                  setError(null);
+                }}
                 className="text-primary font-bold ml-1 hover:underline"
               >
                 {isLogin ? 'Đăng ký ngay' : 'Đăng nhập'}
               </button>
             </p>
 
-            <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+            {error && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-100 text-red-600 text-sm rounded-xl flex items-center gap-2">
+                <span className="w-1 h-1 bg-red-600 rounded-full"></span>
+                {error}
+              </div>
+            )}
+
+            <form className="space-y-4" onSubmit={handleSubmit}>
               {!isLogin && (
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Họ và tên</label>
                   <div className="relative">
                     <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                     <input 
+                      name="fullName"
                       type="text" 
+                      value={formData.fullName}
+                      onChange={handleInputChange}
+                      required={!isLogin}
                       placeholder="Nguyễn Văn A"
                       className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                     />
@@ -80,7 +138,11 @@ const Auth: React.FC = () => {
                 <div className="relative">
                   <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                   <input 
+                    name="email"
                     type="email" 
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    required
                     placeholder="email@example.com"
                     className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                   />
@@ -90,24 +152,37 @@ const Auth: React.FC = () => {
               <div className="space-y-1">
                 <div className="flex justify-between items-center">
                   <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Mật khẩu</label>
-                  
                 </div>
                 <div className="relative">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                   <input 
+                    name="password"
                     type="password" 
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    required
                     placeholder="••••••••"
                     className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                   />
                 </div>
                 {isLogin && (
-                    <button className="text-xs font-bold text-primary hover:underline">Quên mật khẩu?</button>
+                    <button type="button" className="text-xs font-bold text-primary hover:underline">Quên mật khẩu?</button>
                   )}
               </div>
 
-              <button className="w-full bg-primary hover:bg-secondary text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-primary/25 flex items-center justify-center gap-2 group mt-6">
-                {isLogin ? 'Đăng nhập' : 'Tạo tài khoản'} 
-                <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+              <button 
+                type="submit"
+                disabled={loading}
+                className="w-full bg-primary hover:bg-secondary text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-primary/25 flex items-center justify-center gap-2 group mt-6 disabled:opacity-70 disabled:cursor-not-allowed"
+              >
+                {loading ? (
+                  <Loader2 size={18} className="animate-spin" />
+                ) : (
+                  <>
+                    {isLogin ? 'Đăng nhập' : 'Tạo tài khoản'} 
+                    <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                  </>
+                )}
               </button>
             </form>
 
@@ -131,8 +206,6 @@ const Auth: React.FC = () => {
                 <span className="text-sm font-bold text-gray-700">Đăng nhập bằng Google</span>
               </button>
             </div>
-
-            
           </div>
         </div>
       </div>
