@@ -31,12 +31,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const handleAuthSuccess = (response: ApiResponse<AuthResponseData>) => {
     const { data } = response;
     authService.saveAuthData(data);
-    setUser({
-      email: data.email,
-      fullName: data.fullName,
-      accessTokenExpiration: data.accessTokenExpiration,
-      refreshTokenExpiration: data.refreshTokenExpiration,
-    });
+    const savedUser = authService.getUser(); // Get the user with decoded role
+    setUser(savedUser);
     setAccessToken(data.accessToken);
   };
 

@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 import { AuthProvider } from './context/AuthContext.tsx'
+import { ToastProvider } from './context/ToastContext.tsx'
 import { GoogleOAuthProvider } from '@react-oauth/google'
 
 // Vui lòng thay thế clientId bằng Client ID thực tế từ Google Cloud Console
@@ -12,7 +13,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <AuthProvider>
-        <App />
+        <ToastProvider>
+          <App />
+        </ToastProvider>
       </AuthProvider>
     </GoogleOAuthProvider>
   </React.StrictMode>,

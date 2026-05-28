@@ -3,6 +3,7 @@ const API_BASE_URL = 'https://localhost:7031/api';
 export interface UserData {
   email: string;
   fullName: string;
+  role?: string;
   accessTokenExpiration: string;
   refreshTokenExpiration: string;
 }
@@ -12,6 +13,7 @@ export interface AuthResponseData {
   refreshToken: string;
   email: string;
   fullName: string;
+  role?: string;
   accessTokenExpiration: string;
   refreshTokenExpiration: string;
 }
@@ -100,11 +102,23 @@ export const authService = {
   },
 
   saveAuthData(data: AuthResponseData) {
+    // Decode role from JWT if not provided in response
+    let role = data.role;
+    if (!role && data.accessToken) {
+      try {
+        const payload = JSON.parse(atob(data.accessToken.split('.')[1]));
+        role = payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || payload['role'];
+      } catch (e) {
+        console.error('Error decoding token role:', e);
+      }
+    }
+
     localStorage.setItem('accessToken', data.accessToken);
     localStorage.setItem('refreshToken', data.refreshToken);
     localStorage.setItem('user', JSON.stringify({
       email: data.email,
       fullName: data.fullName,
+      role: role,
       accessTokenExpiration: data.accessTokenExpiration,
       refreshTokenExpiration: data.refreshTokenExpiration
     }));

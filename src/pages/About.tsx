@@ -1,105 +1,127 @@
 import React from 'react';
-import { Target, Heart, Rocket } from 'lucide-react';
 
 const About: React.FC = () => {
+  const team = [
+    { 
+      name: 'Huỳnh Minh Tâm', 
+      role: 'PROJECT LEADER', 
+      image: '/PlanifyImg/Home/Avatar1.png', 
+      bio: 'Quản lý dự án có kinh nghiệm với đam mê xây dựng các giải pháp tự động hóa.',
+      position: 'object-[center_20%]' 
+    },
+    { 
+      name: 'Ông Quốc Đạt', 
+      role: 'DEVOOP', 
+      image: '/PlanifyImg/Home/Avatar2.png', 
+      bio: 'Lập trình viên backend chuyên về kiến trúc ứng dụng và tối ưu hóa hệ thống.',
+      position: 'object-[center_15%]'
+    },
+    { 
+      name: 'Nguyễn Đăng Khoa', 
+      role: 'DEVBE', 
+      image: '/PlanifyImg/Home/Avatar3.png', 
+      bio: 'Backend developer tỉ mẩn, chuyên phát triển API và tích hợp cơ sở dữ liệu.',
+      position: 'object-[center_25%]'
+    },
+    { 
+      name: 'Nguyễn Đăng Khoa', 
+      role: 'UX/UI DESIGNER', 
+      image: '/PlanifyImg/Home/Avatar4.png', 
+      bio: 'Nhà thiết kế UX/UI sáng tạo, mang đến cho web các trải nghiệm tuyệt vời.',
+      position: 'object-center'
+    },
+    { 
+      name: 'Trịnh Nguyễn Bảo Duy', 
+      role: 'DEVFE', 
+      image: '/PlanifyImg/Home/Avatar5.png', 
+      bio: 'Frontend developer giỏi, chuyên xây dựng giao diện người dùng hiện đại.',
+      position: 'object-center'
+    },
+    { 
+      name: 'Lê Quốc Minh', 
+      role: 'DEVAI', 
+      image: '/PlanifyImg/Home/Avatar6.png', 
+      bio: 'AI/ML engineer, chuyên phát triển các mô hình AI cho lập kế hoạch tự động.',
+      position: 'object-center'
+    }
+  ];
+
+  const values = [
+    { 
+      title: 'Tập trung vào người dùng', 
+      desc: 'Chúng tôi luôn đặt nhu cầu của người dùng lên hàng đầu trong mỗi quyết định thiết kế và phát triển.'
+    },
+    { 
+      title: 'Sáng tạo liên tục', 
+      desc: 'Chúng tôi không bao giờ ngừng tìm kiếm những cách mới để cải thiện sản phẩm và dịch vụ của chúng tôi.'
+    },
+    { 
+      title: 'Làm việc nhóm', 
+      desc: 'Sức mạnh của chúng tôi nằm ở khả năng cộng tác hiệu quả và hỗ trợ lẫn nhau để đạt mục tiêu chung.'
+    }
+  ];
+
   return (
-    <div className="pt-24 pb-16 min-h-screen bg-surface">
-      {/* Hero Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center mb-24">
-        <h2 className="text-sm font-bold text-primary uppercase tracking-widest mb-3">Về chúng tôi</h2>
-        <h1 className="text-4xl lg:text-6xl font-extrabold text-gray-900 mb-8 leading-tight">
-          Sứ mệnh của chúng tôi là giúp bạn <br /> <span className="text-secondary">hiện thực hóa</span> mọi ý tưởng.
-        </h1>
-        <p className="text-gray-500 max-w-3xl mx-auto text-lg leading-relaxed">
-          Planify được thành lập với niềm tin rằng bất kỳ ai cũng có thể đạt được những mục tiêu lớn lao nếu có một lộ trình đúng đắn. 
-          Chúng tôi sử dụng AI để loại bỏ sự phức tạp trong việc lập kế hoạch, giúp bạn tập trung hoàn toàn vào hành động.
-        </p>
-      </section>
-
-      {/* Core Values */}
-      <section className="bg-white py-24 mb-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h3 className="text-3xl font-bold text-gray-900">Giá trị cốt lõi</h3>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-            {[
-              { 
-                title: 'Đơn giản hóa', 
-                desc: 'Chúng tôi biến những dự án phức tạp thành các bước nhỏ dễ dàng thực hiện.',
-                icon: <Rocket className="text-primary" size={32} />
-              },
-              { 
-                title: 'Dựa trên dữ liệu', 
-                desc: 'Mọi đề xuất của AI đều dựa trên các mô hình quản lý dự án hiệu quả nhất thế giới.',
-                icon: <Target className="text-secondary" size={32} />
-              },
-              { 
-                title: 'Đồng hành', 
-                desc: 'Chúng tôi không chỉ là công cụ, chúng tôi là đối tác tin cậy trong hành trình của bạn.',
-                icon: <Heart className="text-accent" size={32} />
-              }
-            ].map((value, idx) => (
-              <div key={idx} className="text-center group">
-                <div className="w-20 h-20 bg-gray-50 rounded-3xl flex items-center justify-center mx-auto mb-6 group-hover:bg-primary/5 transition-colors">
-                  {value.icon}
-                </div>
-                <h4 className="text-xl font-bold text-gray-900 mb-4">{value.title}</h4>
-                <p className="text-gray-500 leading-relaxed">{value.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Our Team */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-24">
-        <div className="text-center mb-16">
-          <h3 className="text-3xl font-bold text-gray-900 mb-4">Đội ngũ sáng lập</h3>
-          <p className="text-gray-500">Những người đứng sau sự đột phá của Planify AI.</p>
-        </div>
+    <div className="pt-24 pb-20 min-h-screen bg-white font-sans">
+      {/* Team Section */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-32 text-center">
+        <h1 className="text-4xl md:text-5xl font-bold text-[#4c6ef5] mb-20 mt-10">Gặp gỡ đội ngũ của chúng tôi</h1>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          {[
-            { name: 'Alex Nguyen', role: 'CEO & Founder', image: '👨‍💼' },
-            { name: 'Sarah Tran', role: 'CTO / AI Research', image: '👩‍💻' },
-            { name: 'Michael Le', role: 'Head of Product', image: '👨‍🎨' },
-            { name: 'Elena Pham', role: 'Customer Success', image: '👩‍💼' }
-          ].map((member, idx) => (
-            <div key={idx} className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm text-center hover:shadow-xl transition-all">
-              <div className="text-6xl mb-6 bg-gray-50 w-24 h-24 flex items-center justify-center rounded-full mx-auto">
-                {member.image}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-16">
+          {team.map((member, idx) => (
+            <div key={idx} className="flex flex-col rounded-3xl overflow-hidden shadow-sm bg-[#e9ecef]/30 group">
+              {/* Blue Header with Large Centered Avatar */}
+              <div className="bg-[#6366f1] h-56 relative flex items-center justify-center overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-transparent opacity-30" />
+                <div className="relative w-44 h-44 rounded-full border-8 border-white/20 shadow-2xl overflow-hidden bg-gray-100">
+                  <img 
+                    src={member.image} 
+                    alt={member.name} 
+                    className={`w-full h-full object-cover ${member.position} transition-transform duration-500 group-hover:scale-110`}
+                  />
+                </div>
               </div>
-              <h4 className="text-lg font-bold text-gray-900 mb-1">{member.name}</h4>
-              <p className="text-primary text-sm font-medium mb-4">{member.role}</p>
-              <div className="flex justify-center space-x-3 text-gray-400">
-                <div className="w-8 h-8 rounded-full border border-gray-100 flex items-center justify-center hover:text-primary cursor-pointer">in</div>
-                <div className="w-8 h-8 rounded-full border border-gray-100 flex items-center justify-center hover:text-primary cursor-pointer">tw</div>
+              
+              {/* Content */}
+              <div className="p-8 text-left bg-white flex-grow">
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">{member.name}</h3>
+                <p className="text-[#6366f1] font-bold text-sm tracking-wider mb-4 uppercase">{member.role}</p>
+                <p className="text-gray-600 leading-relaxed font-medium">
+                  {member.bio}
+                </p>
               </div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Stats / Numbers */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-gray-900 rounded-[3rem] p-12 lg:p-20 text-white flex flex-wrap justify-around gap-12">
-          <div className="text-center">
-            <div className="text-5xl font-black mb-2 text-primary">3+</div>
-            <div className="text-gray-400 uppercase tracking-widest text-xs">Năm phát triển</div>
-          </div>
-          <div className="text-center">
-            <div className="text-5xl font-black mb-2 text-secondary">50+</div>
-            <div className="text-gray-400 uppercase tracking-widest text-xs">Kỹ sư & Chuyên gia</div>
-          </div>
-          <div className="text-center">
-            <div className="text-5xl font-black mb-2 text-accent">1M+</div>
-            <div className="text-gray-400 uppercase tracking-widest text-xs">Nhiệm vụ được hoàn thành</div>
-          </div>
-          <div className="text-center">
-            <div className="text-5xl font-black mb-2 text-primary">24/7</div>
-            <div className="text-gray-400 uppercase tracking-widest text-xs">Hỗ trợ khách hàng</div>
+      {/* Values Section */}
+      <section className="bg-white py-20 border-t border-gray-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-4xl md:text-5xl font-bold text-[#4c6ef5] mb-4">Giá trị cốt lõi của chúng tôi</h2>
+          <p className="text-gray-500 mb-20 font-medium">Ba nguyên tắc hướng dẫn mọi quyết định và hành động của chúng tôi</p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+            {values.map((value, idx) => (
+              <div key={idx} className="relative group">
+                {/* Background Blue Accent */}
+                <div className="absolute -inset-1 bg-[#6366f1] rounded-3xl opacity-100 -z-10 transform translate-y-2" />
+                
+                {/* Main Card */}
+                <div className="bg-[#e9ecef] p-10 rounded-3xl text-left h-full border border-gray-200">
+                  <h4 className="text-2xl font-bold text-gray-900 mb-6 leading-tight">
+                    {value.title.split(' ').map((word, i) => (
+                      <React.Fragment key={i}>
+                        {word} {i === 1 && <br />}
+                      </React.Fragment>
+                    ))}
+                  </h4>
+                  <p className="text-gray-600 leading-relaxed font-medium">
+                    {value.desc}
+                  </p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>

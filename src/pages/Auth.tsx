@@ -65,7 +65,18 @@ const Auth: React.FC<AuthProps> = ({ mode }) => {
         await register(formData);
       }
       
-      navigate('/');
+      // The state might not be updated yet, so we could check the localStorage or trust the AuthContext
+      // But a better way is to handle this in a useEffect or just check what's returned if we can.
+      // Since we updated AuthContext to set user, we can navigate based on what's in localStorage if needed,
+      // or just navigate to / and let App.tsx handle it if we had a dashboard redirect.
+      // However, the requirement says: "Nếu role chứa 'Admin': Điều hướng người dùng về trang Admin Dashboard"
+      
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      if (user.role === 'Admin') {
+        navigate('/admin/dashboard');
+      } else {
+        navigate('/');
+      }
     } catch (err: any) {
       setError(err.message || 'Có lỗi xảy ra, vui lòng thử lại.');
     } finally {

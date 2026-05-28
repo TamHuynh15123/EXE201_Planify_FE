@@ -69,6 +69,18 @@ const Navbar: React.FC = () => {
                       <p className="text-sm font-black text-gray-800 truncate">{user.email}</p>
                     </div>
 
+                    {user.role === 'Admin' && (
+                      <Link 
+                        to="/admin/dashboard" 
+                        className="flex items-center gap-3 px-5 py-3 text-primary hover:bg-primary/5 transition-all group"
+                      >
+                        <div className="p-2 bg-primary/5 rounded-xl group-hover:bg-primary/10 transition-colors">
+                          <Layout size={18} />
+                        </div>
+                        <span className="text-sm font-bold">Dashboard Admin</span>
+                      </Link>
+                    )}
+
                     <Link 
                       to="/profile" 
                       className="flex items-center gap-3 px-5 py-3 text-gray-600 hover:bg-primary/5 hover:text-primary transition-all group"
