@@ -8,16 +8,23 @@ import About from './pages/About'
 import Contact from './pages/Contact'
 import MyPlans from './pages/MyPlans'
 import Auth from './pages/Auth'
+import Profile from './pages/Profile'
 import Footer from './components/Footer'
 import ProtectedRoute from './components/ProtectedRoute'
 import AdminLayout from './components/admin/AdminLayout'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminSubscriptions from './pages/admin/AdminSubscriptions'
+import AIChat from './components/AIChat'
+import { Sparkles } from 'lucide-react'
+import { useState } from 'react'
+
 
 function App() {
+  const [isAiOpen, setIsAiOpen] = useState(false);
+
   return (
     <Router>
-      <div className="min-h-screen bg-surface flex flex-col">
+      <div className="min-h-screen bg-surface flex flex-col relative">
         <Routes>
           {/* Public Routes with Navbar and Footer */}
           <Route element={<><Navbar /><main className="flex-grow"><Outlet /></main><Footer /></>}>
@@ -25,6 +32,7 @@ function App() {
             <Route path="/home" element={<Navigate to="/" replace />} />
             <Route path="/planning" element={<Planning />} />
             <Route path="/my-plans" element={<MyPlans />} />
+            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/plans/:id" element={<PlanDetail />} />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/about" element={<About />} />
@@ -45,6 +53,19 @@ function App() {
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+
+        {/* Global Floating AI Button */}
+        <button 
+          onClick={() => setIsAiOpen(true)}
+          className="fixed bottom-6 right-6 w-14 h-14 bg-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-[90] group border border-gray-100 p-0 overflow-hidden"
+          title="Hỏi trợ lý AI"
+        >
+          <img src="/ai-bot.jpg" alt="AI Assistant" className="w-full h-full object-cover" />
+          <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full"></div>
+        </button>
+
+        <AIChat isOpen={isAiOpen} onClose={() => setIsAiOpen(false)} />
+        
       </div>
     </Router>
   )

@@ -83,13 +83,14 @@ const Navbar: React.FC = () => {
 
                     <Link 
                       to="/profile" 
-                      className="flex items-center gap-3 px-5 py-3 text-gray-600 hover:bg-primary/5 hover:text-primary transition-all group"
+                      className="flex items-center gap-3 px-5 py-3 text-gray-700 hover:bg-gray-50 transition-all group"
                     >
-                      <div className="p-2 bg-gray-50 rounded-xl group-hover:bg-primary/10 transition-colors">
+                      <div className="p-2 bg-gray-100 rounded-xl group-hover:bg-primary/10 group-hover:text-primary transition-colors">
                         <UserCircle size={18} />
                       </div>
-                      <span className="text-sm font-bold">Hồ sơ cá nhân</span>
+                      <span className="text-sm font-bold">Hồ sơ của tôi</span>
                     </Link>
+
 
                     <Link 
                       to="/my-plans" 

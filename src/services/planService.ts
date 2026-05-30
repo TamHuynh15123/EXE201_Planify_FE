@@ -71,5 +71,25 @@ export const planService = {
     const result = await response.json();
     if (!response.ok) throw new Error(result.message || 'Không thể lấy danh sách kế hoạch');
     return result;
+  },
+
+  async confirmPlan(planId: string): Promise<ApiResponse<Plan>> {
+    const response = await fetch(`${API_BASE_URL}/Plans/${planId}/confirm`, {
+      method: 'POST',
+      headers: getHeaders(),
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.message || 'Không thể xác nhận kế hoạch');
+    return result;
+  },
+
+  async deleteDraftPlan(planId: string): Promise<ApiResponse<void>> {
+    const response = await fetch(`${API_BASE_URL}/Plans/${planId}/draft`, {
+      method: 'DELETE',
+      headers: getHeaders(),
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.message || 'Không thể hủy bản nháp');
+    return result;
   }
 };

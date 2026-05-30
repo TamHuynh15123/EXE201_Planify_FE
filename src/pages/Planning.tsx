@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { Plan, CreatePlanDto, CreatePlanTaskDto, TaskPriority } from '../types/plan.types';
 import { planService } from '../services/planService';
+import { aiService } from '../services/aiService';
 import { useNavigate } from 'react-router-dom';
 
 interface LocalTask extends Omit<CreatePlanTaskDto, 'parentTaskId' | 'startDate' | 'dueDate'> {
@@ -20,11 +21,12 @@ const Planning: React.FC = () => {
   const [activeMode, setActiveMode] = useState<'ai' | 'manual'>('ai');
   const [manualStep, setManualStep] = useState<1 | 2>(1);
   const [createdPlan, setCreatedPlan] = useState<Plan | null>(null);
+  const [isAiGenerating, setIsAiGenerating] = useState(false);
+  const [showAiPreview, setShowAiPreview] = useState(false);
+  const [aiGeneratedPlan, setAiGeneratedPlan] = useState<Plan | null>(null);
   
   // AI Form States
   const [goal, setGoal] = useState('');
-  const [deadline, setDeadline] = useState('');
-  const [detailLevel, setDetailLevel] = useState('medium');
 
   // Manual Form States (Step 1)
   const [planData, setPlanData] = useState<CreatePlanDto>({
@@ -76,6 +78,53 @@ const Planning: React.FC = () => {
     }
   };
 
+  const handleAiGenerate = async () => {
+    if (!goal || goal.length < 10) {
+      alert('Vui lòng mô tả mục tiêu chi tiết hơn (tối thiểu 10 ký tự)');
+      return;
+    }
+
+    setIsAiGenerating(true);
+    try {
+      const response = await aiService.generatePlan(goal);
+      setAiGeneratedPlan(response.plan);
+      setShowAiPreview(true);
+    } catch (error: any) {
+      alert('Lỗi khi AI tạo kế hoạch: ' + error.message);
+    } finally {
+      setIsAiGenerating(false);
+    }
+  };
+
+  const handleConfirmAiPlan = async () => {
+    if (!aiGeneratedPlan?.id) return;
+    setIsSubmitting(true);
+    try {
+      await planService.confirmPlan(aiGeneratedPlan.id);
+      localStorage.setItem('currentPlanId', aiGeneratedPlan.id);
+      navigate(`/plans/${aiGeneratedPlan.id}`);
+    } catch (error: any) {
+      alert('Lỗi khi xác nhận kế hoạch: ' + error.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCancelAiPlan = async () => {
+    if (!aiGeneratedPlan?.id) {
+      setShowAiPreview(false);
+      return;
+    }
+    try {
+      await planService.deleteDraftPlan(aiGeneratedPlan.id);
+      setAiGeneratedPlan(null);
+      setShowAiPreview(false);
+    } catch (error: any) {
+      console.error('Lỗi khi hủy bản nháp:', error);
+      setShowAiPreview(false);
+    }
+  };
+
   const handleCreatePlanShell = async () => {
     if (!planData.title) {
       alert('Vui lòng nhập tên kế hoạch');
@@ -95,6 +144,9 @@ const Planning: React.FC = () => {
         ...rawPlan,
         id: rawPlan.id || rawPlan.Id
       };
+      if (plan.id) {
+        localStorage.setItem('currentPlanId', plan.id);
+      }
       setCreatedPlan(plan);
       setManualStep(2);
     } catch (error: any) {
@@ -161,7 +213,7 @@ const Planning: React.FC = () => {
       <div className="p-8 lg:p-12 space-y-8">
         <div className="space-y-4">
           <label className="flex items-center gap-2 text-sm font-bold text-gray-700 uppercase tracking-wider">
-            <Target size={18} className="text-primary" /> Mục tiêu của bạn
+            <Target size={18} className="text-primary" /> Mục tiêu của bạn (AI)
           </label>
           <textarea 
             value={goal}
@@ -171,46 +223,79 @@ const Planning: React.FC = () => {
           ></textarea>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="space-y-4">
-            <label className="flex items-center gap-2 text-sm font-bold text-gray-700 uppercase tracking-wider">
-              <Calendar size={18} className="text-primary" /> Thời hạn mong muốn
-            </label>
-            <input 
-              type="date" 
-              value={deadline}
-              onChange={(e) => setDeadline(e.target.value)}
-              className="w-full p-4 bg-gray-50 border border-border rounded-xl outline-none focus:border-primary transition-all text-gray-700"
-            />
-          </div>
-
-          <div className="space-y-4">
-            <label className="flex items-center gap-2 text-sm font-bold text-gray-700 uppercase tracking-wider">
-              <BarChart size={18} className="text-primary" /> Độ chi tiết
-            </label>
-            <select 
-              value={detailLevel}
-              onChange={(e) => setDetailLevel(e.target.value)}
-              className="w-full p-4 bg-gray-50 border border-border rounded-xl outline-none focus:border-primary transition-all text-gray-700 appearance-none"
-            >
-              <option value="low">Cơ bản (Các mốc chính)</option>
-              <option value="medium">Vừa phải (Nhiệm vụ hàng tuần)</option>
-              <option value="high">Chi tiết (Nhiệm vụ hàng ngày)</option>
-            </select>
-          </div>
-        </div>
-
         <div className="pt-4 flex flex-col sm:flex-row gap-4">
-          <button className="flex-grow bg-gradient-ai text-white font-bold py-4 rounded-xl shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all flex items-center justify-center gap-2 group">
-            <Sparkles size={20} className="group-hover:rotate-12 transition-transform" />
-            Tạo kế hoạch thông minh
-          </button>
-          <button className="px-8 py-4 bg-white border border-border text-gray-600 font-bold rounded-xl hover:bg-gray-50 transition-all flex items-center justify-center gap-2">
-            <Save size={20} />
-            Lưu nháp
+          <button 
+            onClick={handleAiGenerate}
+            disabled={isAiGenerating}
+            className="flex-grow bg-gradient-ai text-white font-bold py-4 rounded-xl shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all flex items-center justify-center gap-2 group disabled:opacity-70"
+          >
+            {isAiGenerating ? (
+              <RefreshCw size={20} className="animate-spin" />
+            ) : (
+              <div className="w-6 h-6 rounded-lg overflow-hidden border border-white/20 group-hover:rotate-12 transition-transform">
+                <img src="/ai-bot.jpg" alt="AI Bot" className="w-full h-full object-cover" />
+              </div>
+            )}
+            {isAiGenerating ? 'AI đang thiết kế lộ trình...' : 'Tạo kế hoạch thông minh'}
           </button>
         </div>
       </div>
+
+      {/* AI Preview Modal */}
+      {showAiPreview && aiGeneratedPlan && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <div className="bg-white rounded-[32px] w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col shadow-2xl animate-in zoom-in-95 duration-300">
+            <div className="p-8 border-b border-gray-100 bg-primary/5">
+              <div className="flex items-center gap-3 text-primary mb-2">
+                <div className="w-8 h-8 rounded-xl overflow-hidden border-2 border-primary/20">
+                  <img src="/ai-bot.jpg" alt="AI Bot" className="w-full h-full object-cover" />
+                </div>
+                <span className="text-xs font-black uppercase tracking-widest">AI Generated Preview</span>
+              </div>
+              <h2 className="text-2xl font-black text-gray-900">{aiGeneratedPlan.title}</h2>
+              <p className="text-gray-500 text-sm mt-1">{aiGeneratedPlan.goal}</p>
+            </div>
+            
+            <div className="flex-grow overflow-y-auto p-8 space-y-6">
+              {aiGeneratedPlan.tasks?.map((task, idx) => (
+                <div key={idx} className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-black text-primary">
+                      {idx + 1}
+                    </div>
+                    <h4 className="font-bold text-gray-800">{task.title}</h4>
+                  </div>
+                  <div className="ml-9 space-y-2">
+                    {task.subTasks?.map((sub, sIdx) => (
+                      <div key={sIdx} className="flex items-center gap-2 text-sm text-gray-500">
+                        <div className="w-1.5 h-1.5 rounded-full bg-gray-200"></div>
+                        {sub.title}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="p-8 bg-gray-50 border-t border-gray-100 flex gap-4">
+              <button 
+                onClick={handleCancelAiPlan}
+                className="flex-1 py-4 bg-white border border-gray-200 text-gray-500 font-bold rounded-2xl hover:bg-gray-100 transition-all"
+              >
+                Hủy & Thử lại
+              </button>
+              <button 
+                onClick={handleConfirmAiPlan}
+                disabled={isSubmitting}
+                className="flex-[2] py-4 bg-primary text-white font-bold rounded-2xl shadow-xl shadow-primary/20 hover:shadow-primary/40 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
+              >
+                {isSubmitting ? <RefreshCw className="animate-spin" size={20} /> : <Save size={20} />}
+                Lưu & Bắt đầu ngay
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 

@@ -7,12 +7,14 @@ import {
 } from 'lucide-react';
 import { Plan, PlanTask, TaskStatus } from '../types/plan.types';
 import { planService } from '../services/planService';
+import AIChat from '../components/AIChat';
 
 const PlanDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [plan, setPlan] = useState<Plan | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAiChatOpen, setIsAiChatOpen] = useState(false);
 
   const fetchPlanDetails = async () => {
     if (!id) return;
@@ -46,11 +48,15 @@ const PlanDetail: React.FC = () => {
           isPublic: rawData.isPublic !== undefined ? rawData.isPublic : (rawData.IsPublic !== undefined ? rawData.IsPublic : false),
           tasks: (rawData.tasks || rawData.Tasks || []).map(mapTask)
         };
+        if (planData.id) {
+          localStorage.setItem('currentPlanId', planData.id);
+        }
       }
       setPlan(planData);
     } catch (error: any) {
       console.error('Error fetching plan details:', error);
       if (!error.message.includes('405')) {
+        localStorage.removeItem('currentPlanId');
         navigate('/my-plans');
       }
     } finally {
@@ -87,16 +93,23 @@ const PlanDetail: React.FC = () => {
     </div>
   );
 
-  const categories = plan.tasks?.filter(t => !t.parentTaskId) || [];
-  const completedTasksCount = plan.tasks?.reduce((acc, t) => {
-    const subCompleted = t.subTasks?.filter(st => st.status === 'done').length || 0;
-    return acc + (t.status === 'done' && !t.parentTaskId ? 1 : 0) + subCompleted;
-  }, 0) || 0;
+  const categories = plan.tasks?.filter(t => !t.parentTaskId).map(category => {
+    const subTasks = category.subTasks && category.subTasks.length > 0 
+      ? category.subTasks 
+      : plan.tasks?.filter(t => t.parentTaskId === category.id) || [];
+    return { ...category, subTasks };
+  }) || [];
+
+  const completedTasksCount = categories.reduce((acc, category) => {
+    if (category.subTasks && category.subTasks.length > 0) {
+      return acc + category.subTasks.filter(st => st.status === 'done').length;
+    }
+    return acc + (category.status === 'done' ? 1 : 0);
+  }, 0);
   
-  // Total actual tasks (excluding category containers)
-  const totalTasksCount = plan.tasks?.reduce((acc, t) => {
-    return acc + (t.subTasks && t.subTasks.length > 0 ? t.subTasks.length : 1);
-  }, 0) || 0;
+  const totalTasksCount = categories.reduce((acc, category) => {
+    return acc + (category.subTasks && category.subTasks.length > 0 ? category.subTasks.length : 1);
+  }, 0);
 
   const getStatusStyle = (status: string) => {
     switch(status.toLowerCase()) {
@@ -184,18 +197,30 @@ const PlanDetail: React.FC = () => {
           <div className="bg-white border-2 border-[#C7D2FE] rounded-2xl p-8 shadow-sm flex flex-col justify-between">
             <div className="space-y-4">
               <div className="flex items-center gap-2 text-[#4F46E5]">
-                <Sparkles size={18} />
+                <div className="w-6 h-6 rounded-lg overflow-hidden border border-primary/20">
+                  <img src="/ai-bot.jpg" alt="AI Bot" className="w-full h-full object-cover" />
+                </div>
                 <h3 className="font-bold text-gray-900">AI Trợ lý kế hoạch</h3>
               </div>
               <p className="text-xs text-gray-500 font-medium leading-relaxed">
                 Chat với AI để chỉnh sửa và tối ưu kế hoạch của bạn
               </p>
             </div>
-            <button className="w-full py-4 border-2 border-gray-900 rounded-xl font-black text-gray-900 text-sm hover:bg-gray-50 transition-all mt-6">
+            <button 
+              onClick={() => setIsAiChatOpen(true)}
+              className="w-full py-4 border-2 border-gray-900 rounded-xl font-black text-gray-900 text-sm hover:bg-gray-50 transition-all mt-6"
+            >
               Bắt đầu hội thoại
             </button>
           </div>
         </div>
+
+        {/* AI Chat Component */}
+        <AIChat 
+          isOpen={isAiChatOpen} 
+          onClose={() => setIsAiChatOpen(false)} 
+          initialMessage={`Chào bạn! Tôi thấy bạn đang thực hiện kế hoạch "${plan.title}". Tôi có thể giúp gì cho bạn để hoàn thành mục tiêu "${plan.goal}" không?`}
+        />
 
         {/* Task List Table */}
         <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm mb-10">

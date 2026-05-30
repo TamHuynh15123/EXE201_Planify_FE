@@ -33,14 +33,14 @@ const About: React.FC = () => {
     { 
       name: 'Trịnh Nguyễn Bảo Duy', 
       role: 'DEVFE', 
-      image: '/PlanifyImg/Home/Avatar5.png', 
+      image: '/PlanifyImg/Home/Avatar6.png', 
       bio: 'Frontend developer giỏi, chuyên xây dựng giao diện người dùng hiện đại.',
       position: 'object-center'
     },
     { 
       name: 'Lê Quốc Minh', 
       role: 'DEVAI', 
-      image: '/PlanifyImg/Home/Avatar6.png', 
+      image: '/PlanifyImg/Home/Avatar5.png', 
       bio: 'AI/ML engineer, chuyên phát triển các mô hình AI cho lập kế hoạch tự động.',
       position: 'object-center'
     }
