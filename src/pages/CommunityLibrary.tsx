@@ -137,7 +137,7 @@ const CommunityLibrary: React.FC = () => {
           <div className="relative z-10 flex-shrink-0">
             <Link 
               to="/planning" 
-              className="inline-flex items-center gap-2.5 px-6 py-4 bg-neutral-950 text-white font-black text-xs uppercase tracking-widest border border-neutral-950 hover:bg-white hover:text-neutral-950 transition-all shadow-xl shadow-neutral-950/10"
+              className="inline-flex items-center gap-2.5 px-6 py-4 bg-gradient-to-r from-primary to-secondary text-white font-black text-xs uppercase tracking-widest transition-all shadow-xl shadow-primary/20 hover:scale-[1.03] active:scale-[0.98] rounded-2xl"
             >
               <Plus size={16} /> Chia sẻ lộ trình của bạn
             </Link>
@@ -153,7 +153,7 @@ const CommunityLibrary: React.FC = () => {
               placeholder="Tìm kiếm kế hoạch (ví dụ: IELTS, Fitness, React...)"
               value={search}
               onChange={handleSearchChange}
-              className="w-full pl-10 pr-4 py-3 bg-neutral-50 border border-neutral-200 outline-none focus:bg-white focus:border-neutral-950 transition-all text-xs font-medium"
+              className="w-full pl-10 pr-4 py-3 bg-neutral-50 border border-neutral-200 outline-none focus:bg-white focus:border-primary transition-all text-xs font-medium"
             />
             <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400" />
           </div>
@@ -168,10 +168,10 @@ const CommunityLibrary: React.FC = () => {
               <button
                 key={tab.value}
                 onClick={() => handleSortChange(tab.value as any)}
-                className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest border transition-all whitespace-nowrap ${
+                className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest border transition-all whitespace-nowrap rounded-xl ${
                   sortBy === tab.value 
-                    ? 'bg-neutral-950 border-neutral-950 text-white' 
-                    : 'bg-white border-neutral-200 text-neutral-600 hover:border-neutral-950 hover:text-neutral-950'
+                    ? 'bg-primary border-primary text-white shadow-md shadow-primary/10' 
+                    : 'bg-white border-neutral-200 text-neutral-600 hover:border-primary hover:text-primary'
                 }`}
               >
                 {tab.label}
@@ -183,7 +183,7 @@ const CommunityLibrary: React.FC = () => {
         {/* Library Grid */}
         {loading ? (
           <div className="py-32 flex flex-col items-center justify-center bg-white border border-neutral-200">
-            <div className="w-10 h-10 border-4 border-neutral-200 border-t-neutral-950 rounded-full animate-spin"></div>
+            <div className="w-10 h-10 border-4 border-neutral-200 border-t-primary rounded-full animate-spin"></div>
             <p className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mt-4 animate-pulse">Đang tìm kiếm dữ liệu...</p>
           </div>
         ) : plans.length === 0 ? (
@@ -247,7 +247,7 @@ const CommunityLibrary: React.FC = () => {
 
                     <button 
                       onClick={(e) => handleCopy(e, plan)}
-                      className="px-3 py-1.5 bg-white border border-neutral-950 hover:bg-neutral-950 hover:text-white text-[9px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5"
+                      className="px-3 py-1.5 bg-white border border-primary text-primary hover:bg-primary hover:text-white text-[9px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 rounded-lg"
                     >
                       <Download size={10} /> Lưu lộ trình
                     </button>
@@ -262,7 +262,7 @@ const CommunityLibrary: React.FC = () => {
                 <button
                   disabled={page === 1}
                   onClick={() => setPage(page - 1)}
-                  className="p-2 border border-neutral-200 hover:border-neutral-950 disabled:opacity-40 disabled:hover:border-neutral-200 transition-all"
+                  className="p-2 border border-neutral-200 hover:border-primary hover:text-primary disabled:opacity-40 disabled:hover:border-neutral-200 transition-all rounded-lg"
                 >
                   <ChevronLeft size={16} />
                 </button>
@@ -272,7 +272,7 @@ const CommunityLibrary: React.FC = () => {
                 <button
                   disabled={page === totalPages}
                   onClick={() => setPage(page + 1)}
-                  className="p-2 border border-neutral-200 hover:border-neutral-950 disabled:opacity-40 disabled:hover:border-neutral-200 transition-all"
+                  className="p-2 border border-neutral-200 hover:border-primary hover:text-primary disabled:opacity-40 disabled:hover:border-neutral-200 transition-all rounded-lg"
                 >
                   <ChevronRight size={16} />
                 </button>

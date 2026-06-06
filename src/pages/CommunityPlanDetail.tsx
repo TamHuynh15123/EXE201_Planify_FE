@@ -87,7 +87,7 @@ const CommunityPlanDetail: React.FC = () => {
   if (loading) {
     return (
       <div className="pt-32 pb-20 min-h-screen bg-surface flex flex-col items-center justify-center">
-        <div className="w-10 h-10 border-4 border-neutral-200 border-t-neutral-950 rounded-full animate-spin"></div>
+        <div className="w-10 h-10 border-4 border-neutral-200 border-t-primary rounded-full animate-spin"></div>
         <p className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mt-4 animate-pulse">Đang tải dữ liệu...</p>
       </div>
     );
@@ -99,7 +99,7 @@ const CommunityPlanDetail: React.FC = () => {
         <AlertCircle size={40} className="text-red-500 mb-4" />
         <h3 className="text-base font-black text-neutral-950 uppercase tracking-wider">Không tìm thấy kế hoạch</h3>
         <p className="text-xs text-neutral-500 font-medium mt-1 mb-6">Liên kết này không tồn tại hoặc kế hoạch đã bị gỡ.</p>
-        <Link to="/community" className="px-6 py-3 border border-neutral-950 text-xs font-black uppercase tracking-wider hover:bg-neutral-950 hover:text-white transition-all">
+        <Link to="/community" className="px-6 py-3 border border-primary text-xs font-black uppercase tracking-wider text-primary hover:bg-primary hover:text-white transition-all rounded-xl">
           Quay lại thư viện
         </Link>
       </div>
@@ -125,7 +125,7 @@ const CommunityPlanDetail: React.FC = () => {
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 animate-in fade-in duration-300">
         
         {/* Back Link */}
-        <Link to="/community" className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-neutral-600 hover:text-neutral-950 transition-colors">
+        <Link to="/community" className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-neutral-600 hover:text-primary transition-colors">
           <ArrowLeft size={14} /> Quay lại thư viện
         </Link>
 
@@ -160,7 +160,7 @@ const CommunityPlanDetail: React.FC = () => {
                 className={`h-11 px-5 border flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest transition-all ${
                   communityPlan.isLikedByCurrentUser 
                     ? 'border-red-500 bg-red-50 text-red-500 hover:bg-red-100' 
-                    : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-950'
+                    : 'border-neutral-200 bg-white text-neutral-700 hover:border-primary hover:text-primary'
                 }`}
               >
                 <Heart size={14} fill={communityPlan.isLikedByCurrentUser ? "currentColor" : "none"} />
@@ -170,7 +170,7 @@ const CommunityPlanDetail: React.FC = () => {
               {/* Download / Save Button */}
               <button 
                 onClick={handleCopy}
-                className="h-11 px-6 bg-neutral-950 border border-neutral-950 hover:bg-white hover:text-neutral-950 text-white text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2.5 shadow-lg shadow-neutral-950/10"
+                className="h-11 px-6 bg-gradient-to-r from-primary to-secondary text-white text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2.5 shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] rounded-xl"
               >
                 <Download size={14} /> Lưu về tài khoản
               </button>
@@ -188,8 +188,8 @@ const CommunityPlanDetail: React.FC = () => {
 
         {/* Tasks Preview List */}
         <div className="bg-white border border-neutral-900 p-8 space-y-6">
-          <div className="border-b border-neutral-950 pb-4 flex items-center gap-3">
-            <ListTree className="text-neutral-800" size={18} />
+          <div className="border-b border-primary pb-4 flex items-center gap-3">
+            <ListTree className="text-primary" size={18} />
             <h2 className="text-base font-black text-neutral-950 uppercase tracking-wider">Danh sách các đầu việc ({communityPlan.plan?.tasks?.length || 0})</h2>
           </div>
 
