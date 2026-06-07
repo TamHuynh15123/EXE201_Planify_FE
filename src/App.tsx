@@ -69,7 +69,7 @@ function App() {
           className="fixed bottom-6 right-6 w-14 h-14 bg-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-[90] group border border-gray-100 p-0 overflow-hidden"
           title="Hỏi trợ lý AI"
         >
-          <img src="/ai-bot.jpg" alt="AI Assistant" className="w-full h-full object-cover" />
+          <img src="/ai-bot.png" alt="AI Assistant" className="w-full h-full object-cover" />
           <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full"></div>
         </button>
 

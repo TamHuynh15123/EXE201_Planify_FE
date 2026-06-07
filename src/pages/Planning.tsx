@@ -237,7 +237,7 @@ const Planning: React.FC = () => {
               <RefreshCw size={20} className="animate-spin" />
             ) : (
               <div className="w-6 h-6 rounded-lg overflow-hidden border border-white/20 group-hover:rotate-12 transition-transform">
-                <img src="/ai-bot.jpg" alt="AI Bot" className="w-full h-full object-cover" />
+                <img src="/ai-bot.png" alt="AI Bot" className="w-full h-full object-cover" />
               </div>
             )}
             {isAiGenerating ? 'AI đang thiết kế lộ trình...' : 'Tạo kế hoạch thông minh'}
@@ -252,7 +252,7 @@ const Planning: React.FC = () => {
             <div className="p-8 border-b border-gray-100 bg-primary/5">
               <div className="flex items-center gap-3 text-primary mb-2">
                 <div className="w-8 h-8 rounded-xl overflow-hidden border-2 border-primary/20">
-                  <img src="/ai-bot.jpg" alt="AI Bot" className="w-full h-full object-cover" />
+                  <img src="/ai-bot.png" alt="AI Bot" className="w-full h-full object-cover" />
                 </div>
                 <span className="text-xs font-black uppercase tracking-widest">AI Generated Preview</span>
               </div>

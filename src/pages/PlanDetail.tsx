@@ -1022,7 +1022,7 @@ const PlanDetail: React.FC = () => {
           {/* AI Header */}
           <div className="p-5 border-b border-gray-50 bg-gradient-to-r from-primary/5 to-secondary/5 flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-white border border-primary/20 overflow-hidden shadow-sm flex-shrink-0 flex items-center justify-center">
-              <img src="/ai-bot.jpg" alt="AI Bot" className="w-full h-full object-cover" />
+              <img src="/ai-bot.png" alt="AI Bot" className="w-full h-full object-cover" />
             </div>
             <div className="min-w-0">
               <h3 className="font-black text-sm text-gray-900 truncate">Planify AI Co-Pilot</h3>
@@ -1043,7 +1043,7 @@ const PlanDetail: React.FC = () => {
                         <User size={12} />
                       </div>
                     ) : (
-                      <img src="/ai-bot.jpg" alt="AI" className="w-full h-full object-cover" />
+                      <img src="/ai-bot.png" alt="AI" className="w-full h-full object-cover" />
                     )}
                   </div>
                   <div className={`p-3 rounded-2xl text-[11px] leading-relaxed ${
@@ -1060,7 +1060,7 @@ const PlanDetail: React.FC = () => {
               <div className="flex justify-start">
                 <div className="flex gap-2 max-w-[85%]">
                   <div className="w-7 h-7 rounded-xl overflow-hidden border border-gray-100 bg-white flex-shrink-0">
-                    <img src="/ai-bot.jpg" alt="AI" className="w-full h-full object-cover" />
+                    <img src="/ai-bot.png" alt="AI" className="w-full h-full object-cover" />
                   </div>
                   <div className="p-3 bg-white text-gray-400 rounded-2xl rounded-tl-none border border-gray-100 shadow-xs italic text-[10px] flex items-center gap-1.5">
                     <RefreshCw size={10} className="animate-spin text-primary" />

@@ -62,7 +62,7 @@ const AIChat: React.FC<AIChatProps> = ({ isOpen, onClose, initialMessage }) => {
       <div className="p-6 bg-gradient-ai text-white flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-white/20 rounded-xl overflow-hidden border border-white/20">
-            <img src="/ai-bot.jpg" alt="AI Bot" className="w-full h-full object-cover" />
+            <img src="/ai-bot.png" alt="AI Bot" className="w-full h-full object-cover" />
           </div>
           <div>
             <h3 className="font-bold text-sm">Planify AI</h3>
@@ -88,7 +88,7 @@ const AIChat: React.FC<AIChatProps> = ({ isOpen, onClose, initialMessage }) => {
               <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden ${
                 msg.role === 'user' ? 'bg-primary text-white' : 'bg-white shadow-sm'
               }`}>
-                {msg.role === 'user' ? <User size={14} /> : <img src="/ai-bot.jpg" alt="AI Bot" className="w-full h-full object-cover" />}
+                {msg.role === 'user' ? <User size={14} /> : <img src="/ai-bot.png" alt="AI Bot" className="w-full h-full object-cover" />}
               </div>
               <div className={`p-4 rounded-2xl text-sm leading-relaxed shadow-sm whitespace-pre-wrap ${
                 msg.role === 'user' 
@@ -104,7 +104,7 @@ const AIChat: React.FC<AIChatProps> = ({ isOpen, onClose, initialMessage }) => {
           <div className="flex justify-start">
             <div className="flex gap-3 max-w-[85%]">
               <div className="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center overflow-hidden">
-                <img src="/ai-bot.jpg" alt="AI Bot" className="w-full h-full object-cover" />
+                <img src="/ai-bot.png" alt="AI Bot" className="w-full h-full object-cover" />
               </div>
               <div className="p-4 bg-white text-gray-400 rounded-2xl rounded-tl-none border border-gray-100 shadow-sm flex items-center gap-2">
                 <RefreshCw size={14} className="animate-spin" />
