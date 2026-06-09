@@ -69,7 +69,7 @@ export const subscriptionService = {
     });
   },
 
-  async checkStatus(orderCode: string): Promise<ApiResponse<{ status: string; message?: string }>> {
+  async checkStatus(orderCode: string): Promise<ApiResponse<string>> {
     return apiClient(`/subscriptions/check-status/${orderCode}`, {
       method: 'GET',
     });

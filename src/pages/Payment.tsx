@@ -101,15 +101,13 @@ const Payment: React.FC = () => {
     const interval = setInterval(async () => {
       try {
         const response = await subscriptionService.checkStatus(currentOrderCode);
-        const data = response.data || response;
         
-        // Match status: "success", "paid", or "completed"
+        // response.data is the string returned by the API ("PAID" or "PENDING")
+        const statusStr = typeof response.data === 'string' ? response.data : (response as any).data?.status || (response as any).status;
+        
         const isSuccess = 
-          data?.status?.toLowerCase() === 'success' || 
-          data?.status?.toLowerCase() === 'paid' || 
-          data?.status?.toLowerCase() === 'completed' ||
-          (data as any)?.Status?.toLowerCase() === 'success' ||
-          (data as any)?.Status?.toLowerCase() === 'paid';
+          statusStr?.toLowerCase() === 'paid' || 
+          statusStr?.toLowerCase() === 'success';
 
         if (isSuccess && isMounted) {
           setPaymentStatus('success');
