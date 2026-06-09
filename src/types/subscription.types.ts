@@ -58,4 +58,6 @@ export interface CreateSubscriptionPlanDto {
 export interface UpgradeSubscriptionDto {
   planId: string;
   paymentMethod: string;
+  returnUrl?: string;
+  cancelUrl?: string;
 }

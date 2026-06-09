@@ -35,6 +35,18 @@ export const subscriptionService = {
     });
   },
 
+  async adminGetRevenueStatistics(): Promise<ApiResponse<{
+    totalRevenue: number;
+    successCount: number;
+    newUsersCount: number;
+    monthlyRevenue: Array<{ year: number; month: number; revenue: number }>;
+    yearlyRevenue: Array<{ year: number; revenue: number }>;
+  }>> {
+    return apiClient('/admin/subscriptions/statistics', {
+      method: 'GET',
+    });
+  },
+
   // User Endpoints
   async getActivePlans(): Promise<ApiResponse<SubscriptionPlan[]>> {
     return apiClient('/subscriptions/plans', {
@@ -49,10 +61,23 @@ export const subscriptionService = {
     });
   },
 
-  async upgradeSubscription(data: UpgradeSubscriptionDto): Promise<ApiResponse<UserSubscription>> {
+  async upgradeSubscription(data: UpgradeSubscriptionDto): Promise<ApiResponse<any>> {
     return apiClient('/subscriptions/upgrade', {
       method: 'POST',
       body: JSON.stringify(data),
+    });
+  },
+
+  async checkStatus(orderCode: string): Promise<ApiResponse<{ status: string; message?: string }>> {
+    return apiClient(`/subscriptions/check-status/${orderCode}`, {
+      method: 'GET',
+    });
+  },
+
+  async getCheckoutInfo(orderCode: string): Promise<ApiResponse<any>> {
+    return apiClient(`/subscriptions/checkout-info/${orderCode}`, {
+      method: 'GET',
+      skipAuth: true,
     });
   }
 };

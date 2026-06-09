@@ -1,104 +1,396 @@
-import React from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { 
   Users, 
-  CreditCard, 
-  TrendingUp, 
   Activity,
-  Calendar,
-  CheckCircle,
-  Clock
+  DollarSign,
+  TrendingUp,
+  TrendingDown
 } from 'lucide-react';
+import { subscriptionService } from '../../services/subscriptionService';
+
+interface ChartPoint {
+  year: number;
+  month: number;
+  revenue: number;
+}
 
 const AdminDashboard: React.FC = () => {
+  const [revenueStats, setRevenueStats] = useState<{
+    totalRevenue: number;
+    successCount: number;
+    newUsersCount: number;
+    monthlyRevenue: Array<ChartPoint>;
+    yearlyRevenue: Array<{ year: number; revenue: number }>;
+  } | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [activeRange, setActiveRange] = useState<'7d' | '30d' | '12m'>('12m');
+  
+  // Interactive chart state
+  const [hoveredPoint, setHoveredPoint] = useState<{ x: number; y: number; month: number; year: number; revenue: number } | null>(null);
+  const chartRef = useRef<SVGSVGElement>(null);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await subscriptionService.adminGetRevenueStatistics();
+        setRevenueStats(response.data);
+      } catch (error) {
+        console.error('Error fetching revenue statistics:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchStats();
+  }, []);
+
+  const totalRevenue = revenueStats?.totalRevenue || 0;
+  const successCount = revenueStats?.successCount || 0;
+  const newUsersCount = revenueStats?.newUsersCount || 0;
+  const monthlyData = revenueStats?.monthlyRevenue || [];
+  
+  // Sort monthly data chronologically (year, then month) and take the last 7 months
+  const sortedMonthlyData = [...monthlyData]
+    .sort((a, b) => (a.year !== b.year ? a.year - b.year : a.month - b.month))
+    .slice(-7);
+
+  // If no monthly data returned yet from database, fall back to mock values for visual layout
+  const chartData = sortedMonthlyData.length > 0 
+    ? sortedMonthlyData 
+    : [
+        { year: 2026, month: 1, revenue: 12000000 },
+        { year: 2026, month: 2, revenue: 19000000 },
+        { year: 2026, month: 3, revenue: 15000000 },
+        { year: 2026, month: 4, revenue: 32000000 },
+        { year: 2026, month: 5, revenue: 22000000 },
+        { year: 2026, month: 6, revenue: 29000000 },
+        { year: 2026, month: 7, revenue: 45000000 }
+      ];
+
+  const maxRevenue = Math.max(...chartData.map(d => d.revenue), 1);
+  const avgOrderValue = successCount > 0 ? Math.round(totalRevenue / successCount) : 0;
+
+  // SVG Coordinates mapping
+  const svgWidth = 600;
+  const svgHeight = 180;
+  const paddingX = 40;
+  const paddingY = 20;
+  const chartWidth = svgWidth - 2 * paddingX;
+  const chartHeight = svgHeight - 2 * paddingY;
+
+  const points = chartData.map((d, i) => {
+    const x = paddingX + (i / (chartData.length - 1)) * chartWidth;
+    const y = (svgHeight - paddingY) - (d.revenue / maxRevenue) * chartHeight;
+    return { x, y, ...d };
+  });
+
+  const linePath = points.reduce((path, p, i) => {
+    return i === 0 ? `M ${p.x} ${p.y}` : `${path} L ${p.x} ${p.y}`;
+  }, '');
+
+  const areaPath = points.length > 0 
+    ? `${linePath} L ${points[points.length - 1].x} ${svgHeight - paddingY} L ${points[0].x} ${svgHeight - paddingY} Z` 
+    : '';
+
+  // Tiny Sparkline generators for metrics cards
+  const generateSparkline = (dataArr: number[]) => {
+    const maxVal = Math.max(...dataArr, 1);
+    const w = 100;
+    const h = 30;
+    const coords = dataArr.map((val, idx) => {
+      const cx = (idx / (dataArr.length - 1)) * w;
+      const cy = h - 2 - (val / maxVal) * (h - 6);
+      return { cx, cy };
+    });
+    return coords.reduce((path, c, i) => {
+      return i === 0 ? `M ${c.cx} ${c.cy}` : `${path} L ${c.cx} ${c.cy}`;
+    }, '');
+  };
+
+  // Sparkline data mapping
+  const revenueTrend = chartData.map(d => d.revenue);
+  const usersTrend = [35, 42, 38, 59, 72, 85, 128];
+  const conversionTrend = [88, 91, 89, 90, 92, 91, 92];
+
+  // Mouse Move over main chart to track coordinates
+  const handleMouseMove = (e: React.MouseEvent<SVGSVGElement, MouseEvent>) => {
+    if (!chartRef.current) return;
+    const rect = chartRef.current.getBoundingClientRect();
+    const clientX = e.clientX - rect.left;
+    
+    // Scale clientX back to the 600px viewBox
+    const viewBoxX = (clientX / rect.width) * svgWidth;
+
+    // Find the closest point in chartData
+    let closestIdx = 0;
+    let minDistance = Infinity;
+    
+    points.forEach((p, idx) => {
+      const distance = Math.abs(p.x - viewBoxX);
+      if (distance < minDistance) {
+        minDistance = distance;
+        closestIdx = idx;
+      }
+    });
+
+    const target = points[closestIdx];
+    setHoveredPoint({
+      x: target.x,
+      y: target.y,
+      month: target.month,
+      year: target.year,
+      revenue: target.revenue
+    });
+  };
+
+  const handleMouseLeave = () => {
+    setHoveredPoint(null);
+  };
+
   const stats = [
-    { label: 'Người dùng mới', value: '128', icon: <Users className="text-blue-600" />, trend: '+12%', color: 'bg-blue-50' },
-    { label: 'Doanh thu tháng', value: '45.2M', icon: <TrendingUp className="text-green-600" />, trend: '+8%', color: 'bg-green-50' },
-    { label: 'Gói đang hoạt động', value: '850', icon: <CreditCard className="text-purple-600" />, trend: '+5%', color: 'bg-purple-50' },
-    { label: 'Tỷ lệ duy trì', value: '92%', icon: <Activity className="text-orange-600" />, trend: '+2%', color: 'bg-orange-50' },
+    { 
+      label: 'Tổng Doanh Thu', 
+      value: isLoading ? 'Đang tải...' : `${totalRevenue.toLocaleString('vi-VN')} đ`, 
+      icon: <DollarSign className="text-indigo-600" size={16} />, 
+      trend: '+18.4%', 
+      isPositive: true,
+      sparkline: generateSparkline(revenueTrend),
+      sparkColor: 'stroke-indigo-600'
+    },
+    { 
+      label: 'Tổng khách hàng', 
+      value: isLoading ? 'Đang tải...' : `${newUsersCount}`, 
+      icon: <Users className="text-emerald-600" size={16} />, 
+      trend: '+12.3%', 
+      isPositive: true,
+      sparkline: generateSparkline(usersTrend),
+      sparkColor: 'stroke-emerald-500'
+    },
+    { 
+      label: 'Giá trị đơn TB (AOV)', 
+      value: isLoading ? 'Đang tải...' : `${avgOrderValue.toLocaleString('vi-VN')} đ`, 
+      icon: <Activity className="text-amber-600" size={16} />, 
+      trend: '-2.1%', 
+      isPositive: false,
+      sparkline: generateSparkline(conversionTrend),
+      sparkColor: 'stroke-amber-500'
+    },
   ];
 
-  const recentActivities = [
-    { user: 'Nguyễn Văn A', action: 'Nâng cấp lên gói Premium', time: '2 phút trước', icon: <CheckCircle className="text-green-500" size={16} /> },
-    { user: 'Trần Thị B', action: 'Tạo kế hoạch mới', time: '15 phút trước', icon: <Calendar className="text-blue-500" size={16} /> },
-    { user: 'Lê Văn C', action: 'Đăng ký tài khoản', time: '45 phút trước', icon: <Users className="text-purple-500" size={16} /> },
-    { user: 'Phạm Minh D', action: 'Gia hạn gói Pro', time: '1 giờ trước', icon: <Clock className="text-orange-500" size={16} /> },
-  ];
+
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Chào mừng trở lại, Admin!</h1>
-        <p className="text-gray-500">Dưới đây là tổng quan về hệ thống Planify hôm nay.</p>
+    <div className="space-y-8 min-h-screen bg-[#fcfcfd] p-1.5 font-sans antialiased text-slate-800">
+      {/* Top Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-6 border-b border-slate-100">
+        <div>
+          <h1 className="text-3xl font-black tracking-tight text-slate-900">Báo cáo doanh thu</h1>
+          <p className="text-slate-500 text-sm font-medium mt-1">Quản lý hiệu suất kinh doanh, giao dịch đăng ký gói dịch vụ hệ thống.</p>
+        </div>
+
+        {/* Date Filter Segmented Controls */}
+        <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200/50">
+          <button 
+            onClick={() => setActiveRange('7d')}
+            className={`px-4 py-2 text-xs font-bold rounded-lg transition-all ${activeRange === '7d' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+          >
+            7 ngày qua
+          </button>
+          <button 
+            onClick={() => setActiveRange('30d')}
+            className={`px-4 py-2 text-xs font-bold rounded-lg transition-all ${activeRange === '30d' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+          >
+            30 ngày qua
+          </button>
+          <button 
+            onClick={() => setActiveRange('12m')}
+            className={`px-4 py-2 text-xs font-bold rounded-lg transition-all ${activeRange === '12m' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+          >
+            12 tháng qua
+          </button>
+        </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Metrics Cards Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
         {stats.map((stat, index) => (
-          <div key={index} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex justify-between items-start mb-4">
-              <div className={`${stat.color} p-3 rounded-xl`}>
-                {stat.icon}
+          <div key={index} className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm shadow-slate-100/50 flex flex-col justify-between hover:shadow-md transition-all duration-300">
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{stat.label}</span>
+                <span className="p-2 bg-slate-50 rounded-xl border border-slate-100">{stat.icon}</span>
               </div>
-              <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded-full">
+              <p className="text-2xl font-black tracking-tight text-slate-900">{stat.value}</p>
+            </div>
+            
+            <div className="flex justify-between items-end pt-5 mt-5 border-t border-slate-50">
+              <span className={`text-xs font-extrabold flex items-center gap-1 ${stat.isPositive ? 'text-emerald-600' : 'text-rose-600'}`}>
+                {stat.isPositive ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
                 {stat.trend}
               </span>
+              
+              {/* Sparkline Graph */}
+              <svg className="w-20 h-6 overflow-visible" viewBox="0 0 100 30">
+                <path 
+                  d={stat.sparkline} 
+                  fill="none" 
+                  className={stat.sparkColor} 
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round" 
+                />
+              </svg>
             </div>
-            <p className="text-sm text-gray-500 mb-1">{stat.label}</p>
-            <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Main Chart Placeholder */}
-        <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-lg font-bold text-gray-900">Tăng trưởng người dùng</h2>
-            <select className="bg-gray-50 border-none text-sm font-semibold text-gray-500 rounded-lg px-3 py-1 outline-none">
-              <option>7 ngày qua</option>
-              <option>30 ngày qua</option>
-            </select>
+      {/* Main Chart Area */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div className="lg:col-span-12 bg-white p-8 rounded-3xl border border-slate-100 shadow-sm shadow-slate-100/30">
+          <div className="flex justify-between items-start mb-8">
+            <div className="space-y-1">
+              <h2 className="text-lg font-black text-slate-900">Biểu đồ doanh số</h2>
+              <p className="text-xs font-medium text-slate-400">Doanh thu theo chu kỳ thanh toán thực tế hàng tháng.</p>
+            </div>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 text-[10px] font-black uppercase tracking-wider text-indigo-600">
+              <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 animate-pulse" />
+              {sortedMonthlyData.length > 0 ? 'Dữ liệu thực tế' : 'Dữ liệu demo'}
+            </span>
           </div>
-          <div className="h-64 flex items-end justify-between gap-2 px-2">
-            {[40, 70, 45, 90, 65, 85, 55].map((height, i) => (
-              <div key={i} className="flex-1 bg-primary/10 rounded-t-lg hover:bg-primary/30 transition-colors relative group">
-                <div 
-                  className="absolute bottom-0 w-full bg-primary rounded-t-lg transition-all duration-500" 
-                  style={{ height: `${height}%` }}
-                ></div>
-                <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                  {height} users
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="flex justify-between mt-4 text-xs text-gray-400 font-medium">
-            <span>T2</span><span>T3</span><span>T4</span><span>T5</span><span>T6</span><span>T7</span><span>CN</span>
-          </div>
-        </div>
 
-        {/* Recent Activity */}
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-          <h2 className="text-lg font-bold text-gray-900 mb-6">Hoạt động gần đây</h2>
-          <div className="space-y-6">
-            {recentActivities.map((activity, index) => (
-              <div key={index} className="flex gap-4">
-                <div className="mt-1">
-                  {activity.icon}
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-gray-800">{activity.user}</p>
-                  <p className="text-xs text-gray-500">{activity.action}</p>
-                  <p className="text-[10px] text-gray-400 mt-1">{activity.time}</p>
-                </div>
+          {/* SVG Line Chart Container */}
+          <div className="relative pt-4">
+            <svg 
+              ref={chartRef}
+              className="w-full h-64 overflow-visible cursor-crosshair" 
+              viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+              onMouseMove={handleMouseMove}
+              onMouseLeave={handleMouseLeave}
+            >
+              {/* Gradients */}
+              <defs>
+                <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#4F46E5" stopOpacity="0.2" />
+                  <stop offset="100%" stopColor="#4F46E5" stopOpacity="0.0" />
+                </linearGradient>
+              </defs>
+
+              {/* Horizontal Grid lines */}
+              {[0, 1, 2, 3].map((g) => {
+                const y = paddingY + (g / 3) * chartHeight;
+                return (
+                  <line 
+                    key={g} 
+                    x1={paddingX} 
+                    y1={y} 
+                    x2={svgWidth - paddingX} 
+                    y2={y} 
+                    stroke="#f1f5f9" 
+                    strokeWidth="1" 
+                    strokeDasharray="4 4"
+                  />
+                );
+              })}
+
+              {/* Shaded Area under Curve */}
+              {areaPath && (
+                <path 
+                  d={areaPath} 
+                  fill="url(#chartGradient)" 
+                />
+              )}
+
+              {/* Smooth trend Line */}
+              {linePath && (
+                <path 
+                  d={linePath} 
+                  fill="none" 
+                  stroke="#4F46E5" 
+                  strokeWidth="3" 
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              )}
+
+              {/* Data Node Dots */}
+              {points.map((p, idx) => (
+                <circle 
+                  key={idx}
+                  cx={p.x}
+                  cy={p.y}
+                  r="4"
+                  fill="white"
+                  stroke="#4F46E5"
+                  strokeWidth="2"
+                  className="transition-all duration-200"
+                />
+              ))}
+
+              {/* Hover Indicator Elements */}
+              {hoveredPoint && (
+                <g>
+                  {/* Vertical Track line */}
+                  <line 
+                    x1={hoveredPoint.x} 
+                    y1={paddingY} 
+                    x2={hoveredPoint.x} 
+                    y2={svgHeight - paddingY} 
+                    stroke="#4F46E5" 
+                    strokeWidth="1.5" 
+                    strokeDasharray="2 2"
+                  />
+                  {/* Outer Pulsing Glow */}
+                  <circle 
+                    cx={hoveredPoint.x} 
+                    cy={hoveredPoint.y} 
+                    r="8" 
+                    fill="#4F46E5" 
+                    fillOpacity="0.25"
+                  />
+                  {/* Inner Node Dot */}
+                  <circle 
+                    cx={hoveredPoint.x} 
+                    cy={hoveredPoint.y} 
+                    r="5" 
+                    fill="#4F46E5" 
+                    stroke="white"
+                    strokeWidth="2"
+                  />
+                </g>
+              )}
+            </svg>
+
+            {/* Interactive Tooltip Card */}
+            {hoveredPoint && (
+              <div 
+                className="absolute bg-slate-900 text-white rounded-xl p-3 shadow-xl pointer-events-none z-20 space-y-1 animate-in fade-in zoom-in-95 duration-150"
+                style={{
+                  left: `${(hoveredPoint.x / svgWidth) * 100}%`,
+                  top: `${(hoveredPoint.y / svgHeight) * 100 - 32}%`,
+                  transform: 'translateX(-50%)'
+                }}
+              >
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                  Tháng {hoveredPoint.month}/{hoveredPoint.year}
+                </p>
+                <p className="text-xs font-black">
+                  {hoveredPoint.revenue.toLocaleString('vi-VN')} đ
+                </p>
               </div>
+            )}
+          </div>
+
+          {/* X Axis Labels */}
+          <div className="flex justify-between mt-5 text-[10px] text-slate-400 font-extrabold uppercase tracking-wider px-2">
+            {chartData.map((d, i) => (
+              <span key={i} className="flex-1 text-center truncate px-1">
+                T{d.month}/{d.year.toString().slice(-2)}
+              </span>
             ))}
           </div>
-          <button className="w-full mt-8 py-2 text-sm font-semibold text-primary hover:bg-primary/5 rounded-xl transition-colors">
-            Xem tất cả hoạt động
-          </button>
         </div>
       </div>
+
     </div>
   );
 };

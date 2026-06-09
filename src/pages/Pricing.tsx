@@ -40,14 +40,40 @@ const Pricing: React.FC = () => {
       return;
     }
 
+    const selectedPlan = plans.find(p => p.id === planId);
+    const isPaid = selectedPlan && selectedPlan.price > 0;
+    const paymentMethod = isPaid ? 'SePay' : 'Simulation';
+
     try {
       setUpgradingId(planId);
-      await subscriptionService.upgradeSubscription({
+      const response = await subscriptionService.upgradeSubscription({
         planId,
-        paymentMethod: 'Credit Card'
+        paymentMethod,
+        returnUrl: window.location.origin + '/profile',
+        cancelUrl: window.location.origin + '/pricing'
       });
-      showToast('Nâng cấp gói dịch vụ thành công! Chào mừng bạn đến với trải nghiệm mới.', 'success');
-      navigate('/');
+      
+      const data = response.data || response;
+      
+      if (data.paymentUrl) {
+        // Parse the payment URL (relative, SePay image, or absolute)
+        if (data.paymentUrl.includes('qr.sepay.vn') || data.paymentUrl.startsWith('/') || !data.paymentUrl.includes('://')) {
+          const url = new URL(data.paymentUrl, window.location.origin);
+          const des = url.searchParams.get('des') || '';
+          const match = des.match(/PLNFY(\d+)/i);
+          const orderCode = match ? match[1] : '';
+          const amount = url.searchParams.get('amount') || url.searchParams.get('Amount') || (selectedPlan ? selectedPlan.price.toString() : '69000');
+          const bankAccount = url.searchParams.get('acc') || url.searchParams.get('BankAccount') || '11140845389';
+          const bankName = url.searchParams.get('bank') || url.searchParams.get('BankName') || 'TPBank';
+          
+          navigate(`/payment?orderCode=${orderCode}&amount=${amount}&bankAccount=${bankAccount}&bankName=${bankName}&returnUrl=/profile`);
+        } else {
+          window.location.href = data.paymentUrl;
+        }
+      } else {
+        showToast('Nâng cấp gói dịch vụ thành công! Chào mừng bạn đến với trải nghiệm mới.', 'success');
+        navigate('/profile');
+      }
     } catch (error: any) {
       showToast(error.message || 'Nâng cấp thất bại, vui lòng thử lại.', 'error');
     } finally {

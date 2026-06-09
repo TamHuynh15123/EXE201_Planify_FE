@@ -45,6 +45,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (currentUser) {
         const updatedUser = { 
           ...currentUser, 
+          id: profile.id,
           fullName: profile.fullName, 
           email: profile.email 
         };

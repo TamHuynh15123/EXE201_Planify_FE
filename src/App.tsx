@@ -20,6 +20,7 @@ import AdminPlanFrameworks from './pages/admin/AdminPlanFrameworks'
 import AdminPlanTemplates from './pages/admin/AdminPlanTemplates'
 import AdminCommunityPlans from './pages/admin/AdminCommunityPlans'
 import AIChat from './components/AIChat'
+import Payment from './pages/Payment'
 import { useState } from 'react'
 
 
@@ -59,6 +60,9 @@ function App() {
               <Route path="/admin/settings" element={<div className="p-8">Cài đặt hệ thống (Coming soon)</div>} />
             </Route>
           </Route>
+
+          {/* Standalone payment checkout page (dark mode theme) */}
+          <Route path="/payment" element={<ProtectedRoute><Payment /></ProtectedRoute>} />
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
