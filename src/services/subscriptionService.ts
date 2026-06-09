@@ -39,6 +39,7 @@ export const subscriptionService = {
     totalRevenue: number;
     successCount: number;
     newUsersCount: number;
+    dailyRevenue: Array<{ year: number; month: number; day: number; revenue: number }>;
     monthlyRevenue: Array<{ year: number; month: number; revenue: number }>;
     yearlyRevenue: Array<{ year: number; revenue: number }>;
   }>> {

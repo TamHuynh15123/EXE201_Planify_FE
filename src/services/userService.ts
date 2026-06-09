@@ -7,9 +7,25 @@ export interface UserProfile {
   fullName: string;
 }
 
+export interface UserAdminResponse {
+  id: string;
+  email: string;
+  fullName: string;
+  roles: string[];
+  planName?: string;
+  planStatus?: string;
+  subscriptionExpiresAt?: string;
+}
+
 export const userService = {
   async getProfile(): Promise<ApiResponse<UserProfile>> {
     return apiClient('/user/profile', {
+      method: 'GET',
+    });
+  },
+
+  async adminGetAllUsers(): Promise<ApiResponse<UserAdminResponse[]>> {
+    return apiClient('/admin/users', {
       method: 'GET',
     });
   }

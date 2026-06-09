@@ -19,6 +19,7 @@ import AdminSubscriptions from './pages/admin/AdminSubscriptions'
 import AdminPlanFrameworks from './pages/admin/AdminPlanFrameworks'
 import AdminPlanTemplates from './pages/admin/AdminPlanTemplates'
 import AdminCommunityPlans from './pages/admin/AdminCommunityPlans'
+import AdminUsers from './pages/admin/AdminUsers'
 import AIChat from './components/AIChat'
 import Payment from './pages/Payment'
 import { useState } from 'react'
@@ -56,7 +57,7 @@ function App() {
               <Route path="/admin/frameworks" element={<AdminPlanFrameworks />} />
               <Route path="/admin/templates" element={<AdminPlanTemplates />} />
               <Route path="/admin/community-plans" element={<AdminCommunityPlans />} />
-              <Route path="/admin/users" element={<div className="p-8">Quản lý người dùng (Coming soon)</div>} />
+              <Route path="/admin/users" element={<AdminUsers />} />
               <Route path="/admin/settings" element={<div className="p-8">Cài đặt hệ thống (Coming soon)</div>} />
             </Route>
           </Route>
