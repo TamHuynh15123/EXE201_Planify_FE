@@ -144,6 +144,29 @@ const PlanDetail: React.FC = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
+  // Edit task states
+  const [editTitle, setEditTitle] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editPriority, setEditPriority] = useState<TaskPriority>('medium');
+  const [editStartDate, setEditStartDate] = useState('');
+  const [editDueDate, setEditDueDate] = useState('');
+  const [isSavingTask, setIsSavingTask] = useState(false);
+  const [isDeletingTask, setIsDeletingTask] = useState(false);
+
+  // Create task states
+  const [isCreateTaskModalOpen, setIsCreateTaskModalOpen] = useState(false);
+  const [createTaskParentId, setCreateTaskParentId] = useState<string | null>(null);
+  const [createTitle, setCreateTitle] = useState('');
+  const [createDescription, setCreateDescription] = useState('');
+  const [createPriority, setCreatePriority] = useState<TaskPriority>('medium');
+  const [createStartDate, setCreateStartDate] = useState('');
+  const [createDueDate, setCreateDueDate] = useState('');
+  const [isCreatingTask, setIsCreatingTask] = useState(false);
+
+  // Delete task confirmation states
+  const [isDeleteTaskModalOpen, setIsDeleteTaskModalOpen] = useState(false);
+  const [taskToDelete, setTaskToDelete] = useState<PlanTask | null>(null);
   
   // Publish Community states
   const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
@@ -313,6 +336,128 @@ const PlanDetail: React.FC = () => {
       ]);
     }
   }, [plan, chatMessages.length]);
+
+  const toInputDateFormat = (dateStr?: string) => {
+    if (!dateStr) return '';
+    try {
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return '';
+      return date.toISOString().split('T')[0];
+    } catch {
+      return '';
+    }
+  };
+
+  useEffect(() => {
+    if (selectedTask) {
+      setEditTitle(selectedTask.title || '');
+      setEditDescription(selectedTask.description || '');
+      setEditPriority(selectedTask.priority || 'medium');
+      setEditStartDate(toInputDateFormat(selectedTask.startDate));
+      setEditDueDate(toInputDateFormat(selectedTask.dueDate));
+    }
+  }, [selectedTask]);
+
+  const handleOpenCreateTaskModal = (parentId: string | null) => {
+    setCreateTaskParentId(parentId);
+    setCreateTitle('');
+    setCreateDescription('');
+    setCreatePriority('medium');
+    setCreateStartDate('');
+    setCreateDueDate('');
+    setIsCreateTaskModalOpen(true);
+  };
+
+  const handleCreateTask = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!plan?.id) return;
+    if (!createTitle.trim()) {
+      showToast('Tiêu đề nhiệm vụ không được để trống.', 'warning');
+      return;
+    }
+    if (createStartDate && createDueDate && new Date(createStartDate) > new Date(createDueDate)) {
+      showToast('Ngày bắt đầu không thể sau ngày hạn chót.', 'warning');
+      return;
+    }
+
+    setIsCreatingTask(true);
+    try {
+      const data = {
+        title: createTitle.trim(),
+        parentTaskId: createTaskParentId,
+        description: createDescription.trim(),
+        priority: createPriority,
+        startDate: createStartDate ? new Date(createStartDate).toISOString() : undefined,
+        dueDate: createDueDate ? new Date(createDueDate).toISOString() : undefined,
+        orderIndex: 0
+      };
+      
+      await planService.createPlanTask(plan.id, data);
+      showToast('Thêm nhiệm vụ thành công!', 'success');
+      setIsCreateTaskModalOpen(false);
+      await fetchPlanDetails();
+    } catch (error: any) {
+      showToast('Thêm nhiệm vụ thất bại: ' + error.message, 'error');
+    } finally {
+      setIsCreatingTask(false);
+    }
+  };
+
+  const handleSaveTaskEdit = async () => {
+    if (!plan?.id || !selectedTask) return;
+    if (!editTitle.trim()) {
+      showToast('Tiêu đề nhiệm vụ không được để trống.', 'warning');
+      return;
+    }
+    if (editStartDate && editDueDate && new Date(editStartDate) > new Date(editDueDate)) {
+      showToast('Ngày bắt đầu không thể sau ngày hạn chót.', 'warning');
+      return;
+    }
+
+    setIsSavingTask(true);
+    try {
+      const data = {
+        title: editTitle.trim(),
+        description: editDescription.trim(),
+        priority: editPriority,
+        startDate: editStartDate ? new Date(editStartDate).toISOString() : null,
+        dueDate: editDueDate ? new Date(editDueDate).toISOString() : null
+      };
+
+      await planService.updatePlanTask(plan.id, selectedTask.id, data);
+      showToast('Cập nhật nhiệm vụ thành công!', 'success');
+      setIsDrawerOpen(false);
+      await fetchPlanDetails();
+    } catch (error: any) {
+      showToast('Cập nhật nhiệm vụ thất bại: ' + error.message, 'error');
+    } finally {
+      setIsSavingTask(false);
+    }
+  };
+
+  const handleDeleteTask = () => {
+    if (!selectedTask) return;
+    setTaskToDelete(selectedTask);
+    setIsDeleteTaskModalOpen(true);
+  };
+
+  const handleDeleteTaskConfirm = async () => {
+    if (!plan?.id || !taskToDelete) return;
+    
+    setIsDeletingTask(true);
+    try {
+      await planService.deletePlanTask(plan.id, taskToDelete.id);
+      showToast('Xóa nhiệm vụ thành công!', 'success');
+      setIsDeleteTaskModalOpen(false);
+      setIsDrawerOpen(false);
+      setTaskToDelete(null);
+      await fetchPlanDetails();
+    } catch (error: any) {
+      showToast('Xóa nhiệm vụ thất bại: ' + error.message, 'error');
+    } finally {
+      setIsDeletingTask(false);
+    }
+  };
 
   const handleUpdateTaskStatus = async (taskId: string, targetStatus: string) => {
     if (!plan?.id) return;
@@ -785,6 +930,16 @@ const PlanDetail: React.FC = () => {
           {/* TAB 1: ROADMAP TREE VIEW */}
           {activeTab === 'roadmap' && (
             <div className="flex-grow space-y-4 max-h-[600px] overflow-y-auto pr-1">
+              <div className="flex justify-between items-center mb-2 px-1">
+                <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Lộ trình các chặng</h3>
+                <button
+                  onClick={() => handleOpenCreateTaskModal(null)}
+                  className="flex items-center gap-1 px-3 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary text-[10px] font-black rounded-xl transition-all hover:scale-105"
+                >
+                  <Plus size={12} /> Thêm nhiệm vụ chính
+                </button>
+              </div>
+
               {plan.tasks.filter(t => !t.parentTaskId).map((category, idx) => {
                 const subtasks = category.subTasks && category.subTasks.length > 0 
                   ? category.subTasks 
@@ -840,7 +995,7 @@ const PlanDetail: React.FC = () => {
                     </div>
 
                     {/* Subtasks List */}
-                    {isExpanded && subtasks.length > 0 && (
+                    {isExpanded && (
                       <div className="mt-3 pl-8 space-y-1.5 border-l border-dashed border-gray-100 ml-3.5">
                         {subtasks.map((task) => (
                           <div 
@@ -879,6 +1034,13 @@ const PlanDetail: React.FC = () => {
                             </div>
                           </div>
                         ))}
+                        
+                        <button
+                          onClick={() => handleOpenCreateTaskModal(category.id)}
+                          className="flex items-center gap-1.5 p-2 hover:bg-gray-50 rounded-xl text-[10px] font-bold text-gray-400 hover:text-primary transition-all w-full text-left border border-dashed border-gray-100 hover:border-primary/20"
+                        >
+                          <Plus size={12} /> Thêm nhiệm vụ con...
+                        </button>
                       </div>
                     )}
                   </div>
@@ -1153,7 +1315,19 @@ const PlanDetail: React.FC = () => {
                 
                 {/* Details Fields */}
                 <div className="space-y-4">
-                  {/* Status Dropdown selector */}
+                  {/* Title Field */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Tên nhiệm vụ</label>
+                    <input 
+                      type="text"
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                      className="w-full p-3 bg-gray-50 border border-transparent hover:border-gray-200 focus:bg-white focus:border-primary/20 rounded-2xl text-xs font-bold text-gray-700 outline-none transition-all"
+                      placeholder="Nhập tên nhiệm vụ..."
+                    />
+                  </div>
+
+                  {/* Status Dropdown selector & Priority */}
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Trạng thái</label>
@@ -1170,34 +1344,49 @@ const PlanDetail: React.FC = () => {
 
                     <div className="space-y-1">
                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Độ ưu tiên</label>
-                      <div className={`p-3 rounded-2xl text-center text-xs font-black uppercase tracking-wider ${getPriorityColorClass(selectedTask.priority)}`}>
-                        {getPriorityLabel(selectedTask.priority)}
-                      </div>
+                      <select
+                        value={editPriority}
+                        onChange={(e) => setEditPriority(e.target.value as TaskPriority)}
+                        className="w-full p-3 bg-gray-50 border border-transparent hover:border-gray-200 rounded-2xl text-xs font-bold text-gray-700 outline-none transition-all appearance-none"
+                      >
+                        <option value="low">Thấp</option>
+                        <option value="medium">Vừa</option>
+                        <option value="high">Cao</option>
+                      </select>
                     </div>
                   </div>
 
                   {/* Dates */}
                   <div className="grid grid-cols-2 gap-4 border-t border-b border-gray-50 py-4 my-2">
-                    <div>
-                      <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider block mb-1">Bắt đầu</span>
-                      <span className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
-                        <Calendar size={12} className="text-gray-400" /> {selectedTask.startDate ? formatDate(selectedTask.startDate) : 'Chưa xếp lịch'}
-                      </span>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider block">Bắt đầu</label>
+                      <input
+                        type="date"
+                        value={editStartDate}
+                        onChange={(e) => setEditStartDate(e.target.value)}
+                        className="w-full p-2 bg-gray-50 border border-transparent hover:border-gray-200 focus:bg-white focus:border-primary/20 rounded-xl text-xs font-bold text-gray-700 outline-none transition-all"
+                      />
                     </div>
-                    <div>
-                      <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider block mb-1">Hạn chót</span>
-                      <span className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
-                        <Clock size={12} className="text-gray-400" /> {selectedTask.dueDate ? formatDate(selectedTask.dueDate) : 'Chưa xếp lịch'}
-                      </span>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider block">Hạn chót</label>
+                      <input
+                        type="date"
+                        value={editDueDate}
+                        onChange={(e) => setEditDueDate(e.target.value)}
+                        className="w-full p-2 bg-gray-50 border border-transparent hover:border-gray-200 focus:bg-white focus:border-primary/20 rounded-xl text-xs font-bold text-gray-700 outline-none transition-all"
+                      />
                     </div>
                   </div>
 
                   {/* Description */}
                   <div className="space-y-1">
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Mô tả công việc</label>
-                    <div className="bg-gray-50/50 p-4 border border-gray-100 rounded-2xl text-xs text-gray-600 leading-relaxed min-h-[80px] whitespace-pre-wrap">
-                      {selectedTask.description || 'Không có mô tả chi tiết cho nhiệm vụ này.'}
-                    </div>
+                    <textarea 
+                      value={editDescription}
+                      onChange={(e) => setEditDescription(e.target.value)}
+                      className="w-full p-4 bg-gray-50 border border-transparent hover:border-gray-200 focus:bg-white focus:border-primary/20 rounded-2xl text-xs text-gray-600 leading-relaxed min-h-[100px] outline-none transition-all resize-none"
+                      placeholder="Nhập mô tả chi tiết nhiệm vụ..."
+                    />
                   </div>
                 </div>
 
@@ -1214,7 +1403,7 @@ const PlanDetail: React.FC = () => {
 
                   <div className="space-y-3">
                     <a 
-                      href={`https://www.youtube.com/results?search_query=${encodeURIComponent('Hướng dẫn tự học ' + selectedTask.title)}`}
+                      href={`https://www.youtube.com/results?search_query=${encodeURIComponent('Hướng dẫn tự học ' + (editTitle || selectedTask.title))}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-3 p-3 bg-red-50/20 hover:bg-red-50/50 border border-red-100/50 rounded-2xl transition-all group"
@@ -1230,7 +1419,7 @@ const PlanDetail: React.FC = () => {
                     </a>
 
                     <a 
-                      href={`https://www.google.com/search?q=${encodeURIComponent('Tài liệu tự học ' + selectedTask.title + ' pdf')}`}
+                      href={`https://www.google.com/search?q=${encodeURIComponent('Tài liệu tự học ' + (editTitle || selectedTask.title) + ' pdf')}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-3 p-3 bg-blue-50/20 hover:bg-blue-50/50 border border-blue-100/50 rounded-2xl transition-all group"
@@ -1252,10 +1441,20 @@ const PlanDetail: React.FC = () => {
               {/* Drawer Footer */}
               <div className="p-6 border-t border-gray-100 bg-gray-50/50 flex gap-3">
                 <button 
-                  onClick={() => setIsDrawerOpen(false)}
-                  className="w-full py-3.5 bg-white border border-gray-200 text-gray-600 font-bold rounded-2xl text-xs hover:bg-gray-50 transition-all text-center"
+                  onClick={handleDeleteTask}
+                  disabled={isDeletingTask}
+                  className="flex-1 py-3 bg-red-50 hover:bg-red-100 text-red-500 font-bold rounded-2xl text-xs transition-all text-center flex items-center justify-center gap-1.5"
                 >
-                  Đóng lại
+                  {isDeletingTask ? <RefreshCw className="animate-spin" size={12} /> : <Trash2 size={12} />}
+                  Xóa nhiệm vụ
+                </button>
+                <button 
+                  onClick={handleSaveTaskEdit}
+                  disabled={isSavingTask}
+                  className="flex-1 py-3 bg-primary text-white font-bold rounded-2xl text-xs hover:scale-[1.02] active:scale-95 disabled:opacity-40 transition-all text-center flex items-center justify-center gap-1.5"
+                >
+                  {isSavingTask ? <RefreshCw className="animate-spin" size={12} /> : <CheckCircle size={12} />}
+                  Lưu thay đổi
                 </button>
               </div>
 
@@ -1275,6 +1474,118 @@ const PlanDetail: React.FC = () => {
         onConfirm={handleDeleteActivePlan}
         onCancel={() => setIsDeleteModalOpen(false)}
       />
+
+      {/* Delete Task Confirmation Modal */}
+      <ConfirmModal 
+        isOpen={isDeleteTaskModalOpen}
+        title="Xóa nhiệm vụ"
+        message={`Bạn có chắc chắn muốn xóa nhiệm vụ "${taskToDelete?.title}" ${taskToDelete?.subTasks && taskToDelete.subTasks.length > 0 ? 'và toàn bộ nhiệm vụ con của nó ' : ''}không? Hành động này không thể hoàn tác.`}
+        confirmText="Xóa nhiệm vụ"
+        cancelText="Hủy"
+        type="danger"
+        onConfirm={handleDeleteTaskConfirm}
+        onCancel={() => {
+          setIsDeleteTaskModalOpen(false);
+          setTaskToDelete(null);
+        }}
+      />
+
+      {/* Create Task Modal */}
+      {isCreateTaskModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-[2rem] w-full max-w-md shadow-2xl p-6 border border-gray-100 space-y-5 transform animate-in zoom-in-95 duration-200">
+            <div>
+              <h3 className="font-black text-sm text-gray-800">
+                {createTaskParentId ? 'Thêm nhiệm vụ con thủ công' : 'Thêm nhiệm vụ chính thủ công'}
+              </h3>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">
+                {createTaskParentId ? 'Nhiệm vụ này sẽ thuộc về nhiệm vụ cha đã chọn.' : 'Nhiệm vụ này sẽ là một phần chính của kế hoạch.'}
+              </p>
+            </div>
+
+            <form onSubmit={handleCreateTask} className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Tiêu đề nhiệm vụ</label>
+                <input
+                  type="text"
+                  required
+                  value={createTitle}
+                  onChange={(e) => setCreateTitle(e.target.value)}
+                  placeholder="Nhập tiêu đề nhiệm vụ..."
+                  className="w-full p-3.5 bg-gray-50 border border-transparent rounded-2xl outline-none focus:bg-white focus:border-primary/20 transition-all text-xs font-semibold text-gray-800"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Mô tả chi tiết</label>
+                <textarea
+                  value={createDescription}
+                  onChange={(e) => setCreateDescription(e.target.value)}
+                  placeholder="Nhập mô tả chi tiết công việc..."
+                  className="w-full h-24 p-3.5 bg-gray-50 border border-transparent rounded-2xl outline-none focus:bg-white focus:border-primary/20 transition-all text-xs text-gray-600 resize-none leading-relaxed"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Bắt đầu</label>
+                  <input
+                    type="date"
+                    value={createStartDate}
+                    onChange={(e) => setCreateStartDate(e.target.value)}
+                    className="w-full p-3 bg-gray-50 border border-transparent hover:border-gray-200 focus:bg-white focus:border-primary/20 rounded-2xl text-xs font-bold text-gray-700 outline-none transition-all"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Hạn chót</label>
+                  <input
+                    type="date"
+                    value={createDueDate}
+                    onChange={(e) => setCreateDueDate(e.target.value)}
+                    className="w-full p-3 bg-gray-50 border border-transparent hover:border-gray-200 focus:bg-white focus:border-primary/20 rounded-2xl text-xs font-bold text-gray-700 outline-none transition-all"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Độ ưu tiên</label>
+                <select
+                  value={createPriority}
+                  onChange={(e) => setCreatePriority(e.target.value as TaskPriority)}
+                  className="w-full p-3.5 bg-gray-50 border border-transparent hover:border-gray-200 focus:bg-white focus:border-primary/20 rounded-2xl text-xs font-bold text-gray-700 outline-none transition-all appearance-none"
+                >
+                  <option value="low">Thấp</option>
+                  <option value="medium">Vừa</option>
+                  <option value="high">Cao</option>
+                </select>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsCreateTaskModalOpen(false)}
+                  className="flex-1 py-3.5 bg-white border border-gray-200 text-gray-500 font-bold rounded-2xl text-xs hover:bg-gray-100 transition-all"
+                >
+                  Hủy bỏ
+                </button>
+                <button
+                  type="submit"
+                  disabled={isCreatingTask}
+                  className="flex-1 py-3.5 bg-primary text-white font-bold rounded-2xl text-xs hover:scale-105 active:scale-95 disabled:opacity-40 transition-all flex items-center justify-center gap-1.5"
+                >
+                  {isCreatingTask ? (
+                    <RefreshCw className="animate-spin" size={14} />
+                  ) : (
+                    <>
+                      <Plus size={14} /> Thêm nhiệm vụ
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Publish Community Modal */}
       {isPublishModalOpen && (

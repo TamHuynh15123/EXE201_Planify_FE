@@ -8,6 +8,7 @@ export interface SubscriptionPlan {
   price: number;
   billingCycle: BillingCycle;
   aiRequestsLimit: number;
+  aiRefineLimit?: number | null;
   storageLimitMb: number;
   maxPlans: number;
   features: string; // JSON string or comma separated
@@ -34,6 +35,10 @@ export interface UserSubscription {
   StorageLimitMb?: number;
   maxPlans?: number;
   MaxPlans?: number;
+  aiRefineUsed?: number;
+  AiRefineUsed?: number;
+  aiRefineLimit?: number | null;
+  AiRefineLimit?: number | null;
 }
 
 export interface PaymentTransaction {

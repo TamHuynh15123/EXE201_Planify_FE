@@ -46,10 +46,30 @@ export const apiClient = async (endpoint: string, options: RequestOptions = {}) 
       headers: mergedHeaders,
     });
 
+    // Read response body first
+    const contentType = response.headers.get('content-type');
+    let resData: any;
+    if (contentType && contentType.includes('application/json')) {
+      resData = await response.json().catch(() => ({}));
+    } else {
+      resData = await response.text();
+    }
+
     if (response.status === 401 && !skipAuth) {
+      // If the 401 response contains a custom error message (e.g. business logic error),
+      // do not refresh the token and instead show the error message.
+      const hasCustomError = resData && (resData.message || resData.error || resData.detail);
+      if (hasCustomError) {
+        throw new Error(resData.message || resData.error || resData.detail);
+      }
+
       const rToken = getRefreshToken();
       if (!rToken) {
         clearAuthData();
+        // If it's a GET request, retry anonymously
+        if (restOptions.method === 'GET' || !restOptions.method) {
+          return apiClient(endpoint, { ...options, skipAuth: true });
+        }
         throw new Error('Unauthorized');
       }
 
@@ -75,6 +95,11 @@ export const apiClient = async (endpoint: string, options: RequestOptions = {}) 
           isRefreshing = false;
           clearAuthData();
           window.dispatchEvent(new Event('storage')); // Notify components to reload/logout
+          
+          // If it's a GET request, retry anonymously
+          if (restOptions.method === 'GET' || !restOptions.method) {
+            return apiClient(endpoint, { ...options, skipAuth: true });
+          }
           throw new Error('Unauthorized');
         }
       }
@@ -87,11 +112,16 @@ export const apiClient = async (endpoint: string, options: RequestOptions = {}) 
             headers: mergedHeaders,
           })
             .then(async (res) => {
-              const resData = await res.json().catch(() => ({}));
+              const retryResData = await res.json().catch(() => ({}));
               if (!res.ok) {
-                reject(new Error(resData.message || `Request failed with status ${res.status}`));
+                // If it failed with 401 even after refreshing, retry anonymously for GET requests
+                if (res.status === 401 && (restOptions.method === 'GET' || !restOptions.method)) {
+                  apiClient(endpoint, { ...options, skipAuth: true }).then(resolve).catch(reject);
+                } else {
+                  reject(new Error(retryResData.message || retryResData.error || retryResData.detail || `Request failed with status ${res.status}`));
+                }
               } else {
-                resolve(resData.data !== undefined ? resData : { data: resData });
+                resolve(retryResData.data !== undefined ? retryResData : { data: retryResData });
               }
             })
             .catch(reject);
@@ -101,14 +131,6 @@ export const apiClient = async (endpoint: string, options: RequestOptions = {}) 
 
     if (response.status === 405) {
       throw new Error('Method Not Allowed');
-    }
-
-    const contentType = response.headers.get('content-type');
-    let resData: any;
-    if (contentType && contentType.includes('application/json')) {
-      resData = await response.json().catch(() => ({}));
-    } else {
-      resData = await response.text();
     }
 
     if (!response.ok) {

@@ -34,8 +34,9 @@ const Profile: React.FC = () => {
   const planName = subscription?.planName || subscription?.PlanName || subscription?.plan?.name || 'Gói Miễn Phí';
   const aiRequestsLimit = subscription?.aiRequestsLimit !== undefined ? subscription?.aiRequestsLimit : (subscription?.AiRequestsLimit !== undefined ? subscription?.AiRequestsLimit : (subscription?.plan?.aiRequestsLimit || 10));
   const aiRequestsUsed = subscription?.aiRequestsUsed || 0;
-  const storageLimitMb = subscription?.storageLimitMb !== undefined ? subscription?.storageLimitMb : (subscription?.StorageLimitMb !== undefined ? subscription?.StorageLimitMb : (subscription?.plan?.storageLimitMb || 100));
   const maxPlans = subscription?.maxPlans !== undefined ? subscription?.maxPlans : (subscription?.MaxPlans !== undefined ? subscription?.MaxPlans : (subscription?.plan?.maxPlans || 5));
+  const aiRefineLimit = subscription?.aiRefineLimit !== undefined ? subscription?.aiRefineLimit : (subscription?.AiRefineLimit !== undefined ? subscription?.AiRefineLimit : (subscription?.plan?.aiRefineLimit !== undefined ? subscription?.plan?.aiRefineLimit : null));
+  const aiRefineUsed = subscription?.aiRefineUsed !== undefined ? subscription?.aiRefineUsed : (subscription?.AiRefineUsed !== undefined ? subscription?.AiRefineUsed : 0);
 
   return (
     <div className="pt-24 pb-20 min-h-screen bg-white flex items-center justify-center font-sans px-4">
@@ -52,7 +53,7 @@ const Profile: React.FC = () => {
             <ArrowLeft size={16} />
           </Link>
         </div>
-
+ 
         {/* Info Grid */}
         <div className="space-y-6">
           {/* User Details */}
@@ -66,7 +67,7 @@ const Profile: React.FC = () => {
               <p className="text-sm font-black text-neutral-950">{user.email}</p>
             </div>
           </div>
-
+ 
           {/* Current Plan */}
           <div className="space-y-4 border-b border-neutral-200 pb-6">
             <span className="text-[9px] font-black text-neutral-400 uppercase tracking-widest block">Gói dịch vụ đang dùng</span>
@@ -83,7 +84,7 @@ const Profile: React.FC = () => {
               </Link>
             </div>
           </div>
-
+ 
           {/* Special Privileges List */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 border-b border-neutral-200 pb-6">
             <div className="space-y-1">
@@ -91,8 +92,10 @@ const Profile: React.FC = () => {
               <p className="text-sm font-black text-neutral-950">{aiRequestsUsed} / {aiRequestsLimit}</p>
             </div>
             <div className="space-y-1">
-              <span className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">Dung lượng</span>
-              <p className="text-sm font-black text-neutral-950">{storageLimitMb} MB</p>
+              <span className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">Tinh chỉnh AI</span>
+              <p className="text-sm font-black text-neutral-950">
+                {aiRefineLimit === null || aiRefineLimit === undefined ? 'Không giới hạn' : `${aiRefineUsed} / ${aiRefineLimit}`}
+              </p>
             </div>
             <div className="space-y-1">
               <span className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">Kế hoạch tối đa</span>
