@@ -41,7 +41,12 @@ export const aiService = {
     });
   },
 
-  async generatePlan(prompt: string): Promise<GeneratePlanResponse> {
+  async generatePlan(prompt: string): Promise<GeneratePlanResponse & {
+    usedTemplateId?: string;
+    usedTemplateName?: string;
+    usedFrameworkId?: string;
+    usedFrameworkName?: string;
+  }> {
     return apiClient('/ai/generate-plan', {
       method: 'POST',
       body: JSON.stringify({ prompt }),

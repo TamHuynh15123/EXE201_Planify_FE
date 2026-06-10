@@ -7,6 +7,7 @@ import {
 import { Plan, CreatePlanDto, CreatePlanTaskDto, TaskPriority } from '../types/plan.types';
 import { planService } from '../services/planService';
 import { aiService } from '../services/aiService';
+
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../context/ToastContext';
 
@@ -29,6 +30,9 @@ const Planning: React.FC = () => {
   
   // AI Form States
   const [goal, setGoal] = useState('');
+
+
+
 
   // Manual Form States (Step 1)
   const [planData, setPlanData] = useState<CreatePlanDto>({
@@ -93,6 +97,11 @@ const Planning: React.FC = () => {
       const response = await aiService.generatePlan(goal);
       setAiGeneratedPlan(response.plan);
       setShowAiPreview(true);
+      if (response.usedTemplateName) {
+        showToast(`AI đã áp dụng mẫu: ${response.usedTemplateName}`, 'info');
+      } else if (response.usedFrameworkName) {
+        showToast(`AI đã tự động khớp với loại: ${response.usedFrameworkName}`, 'info');
+      }
     } catch (error: any) {
       showToast('Lỗi khi AI tạo kế hoạch: ' + error.message, 'error');
     } finally {
@@ -166,6 +175,23 @@ const Planning: React.FC = () => {
       return;
     }
 
+    const hasEmptyTitle = localTasks.some(t => !t.title || !t.title.trim());
+    if (hasEmptyTitle) {
+      showToast('Vui lòng nhập tên cho tất cả các nhiệm vụ', 'warning');
+      return;
+    }
+
+    const hasInvalidDates = localTasks.some(t => {
+      if (t.startDate && t.dueDate) {
+        return new Date(t.dueDate) < new Date(t.startDate);
+      }
+      return false;
+    });
+    if (hasInvalidDates) {
+      showToast('Hạn kết thúc không được nhỏ hơn ngày bắt đầu của nhiệm vụ', 'warning');
+      return;
+    }
+
     if (!createdPlan?.id) return;
 
     setIsSubmitting(true);
@@ -215,6 +241,8 @@ const Planning: React.FC = () => {
   const renderAiPlanner = () => (
     <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="p-8 lg:p-12 space-y-8">
+
+
         <div className="space-y-4">
           <label className="flex items-center gap-2 text-sm font-bold text-gray-700 uppercase tracking-wider">
             <Target size={18} className="text-primary" /> Mục tiêu của bạn (AI)
@@ -410,6 +438,100 @@ const Planning: React.FC = () => {
     </div>
   );
 
+  const renderTaskItem = (task: LocalTask, isSubtask: boolean) => (
+    <div key={task.localId} className={`group bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all overflow-hidden relative ${isSubtask ? 'ml-12 border-l-4 border-l-primary/20' : ''}`}>
+      {!isSubtask && (
+        <div className={`w-1.5 absolute top-0 bottom-0 left-0 ${
+          task.priority === 'high' ? 'bg-red-400' : task.priority === 'medium' ? 'bg-amber-400' : 'bg-emerald-400'
+        }`}></div>
+      )}
+      <div className="p-6">
+        <div className="flex flex-col lg:flex-row gap-6">
+          <div className="flex-grow space-y-3">
+            <div className="flex items-center gap-2">
+              {isSubtask && <ChevronRight size={14} className="text-primary/40" />}
+              <input 
+                type="text"
+                value={task.title}
+                onChange={(e) => updateLocalTask(task.localId, 'title', e.target.value)}
+                placeholder={isSubtask ? "Tên bước nhỏ..." : "Tên nhiệm vụ chính..."}
+                className={`w-full outline-none placeholder:text-gray-300 font-bold text-gray-800 ${isSubtask ? 'text-md' : 'text-lg'}`}
+              />
+            </div>
+            <textarea 
+              value={task.description}
+              onChange={(e) => updateLocalTask(task.localId, 'description', e.target.value)}
+              placeholder="Mô tả công việc cần làm..."
+              className="w-full text-sm text-gray-500 outline-none resize-none h-10 bg-transparent"
+            />
+          </div>
+
+          <div className="flex flex-wrap items-center gap-4 lg:border-l lg:pl-6 border-gray-100">
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">Ưu tiên</label>
+              <div className="flex gap-1">
+                {['low', 'medium', 'high'].map((p) => (
+                  <button
+                    key={p}
+                    onClick={() => updateLocalTask(task.localId, 'priority', p)}
+                    className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase transition-all ${
+                      task.priority === p 
+                        ? p === 'high' ? 'bg-red-50 text-red-600' : p === 'medium' ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'
+                        : 'text-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    {p === 'low' ? 'Thấp' : p === 'medium' ? 'Vừa' : 'Cao'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">Bắt đầu</label>
+              <input 
+                type="date"
+                value={task.startDate}
+                onChange={(e) => updateLocalTask(task.localId, 'startDate', e.target.value)}
+                className="block text-[11px] font-medium text-gray-600 outline-none bg-gray-50 p-1.5 rounded"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">Kết thúc</label>
+              <input 
+                type="date"
+                value={task.dueDate}
+                onChange={(e) => updateLocalTask(task.localId, 'dueDate', e.target.value)}
+                className="block text-[11px] font-medium text-gray-600 outline-none bg-gray-50 p-1.5 rounded"
+              />
+            </div>
+
+            <button 
+              onClick={() => removeLocalTask(task.localId)}
+              className="p-2 text-gray-300 hover:text-red-500 transition-colors"
+            >
+              <Trash2 size={18} />
+            </button>
+          </div>
+        </div>
+
+        {!isSubtask && (
+          <div className="mt-4 pt-4 border-t border-gray-50 flex items-center justify-between">
+            <div className="flex items-center gap-4 text-[10px] font-bold text-gray-400 uppercase">
+              Trạng thái: <span className="text-primary">Đang thiết lập</span>
+            </div>
+            <button 
+              onClick={() => addLocalTask(task.localId)}
+              className="flex items-center gap-1.5 text-[11px] font-bold text-primary/60 hover:text-primary transition-colors"
+            >
+              <Plus size={14} /> Thêm bước con
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
   const renderManualStep2 = () => (
     <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
       <div className="bg-primary/5 border border-primary/10 rounded-2xl p-6 flex items-center justify-between">
@@ -449,100 +571,13 @@ const Planning: React.FC = () => {
             </div>
           )}
 
-          {localTasks.map((task) => {
-            const isSubtask = task.parentLocalId !== null;
+          {localTasks.filter(t => t.parentLocalId === null).map((parentTask) => {
+            const children = localTasks.filter(t => t.parentLocalId === parentTask.localId);
             return (
-              <div key={task.localId} className={`group bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all overflow-hidden relative ${isSubtask ? 'ml-12 border-l-4 border-l-primary/20' : ''}`}>
-                {!isSubtask && (
-                  <div className={`w-1.5 absolute top-0 bottom-0 left-0 ${
-                    task.priority === 'high' ? 'bg-red-400' : task.priority === 'medium' ? 'bg-amber-400' : 'bg-emerald-400'
-                  }`}></div>
-                )}
-                <div className="p-6">
-                  <div className="flex flex-col lg:flex-row gap-6">
-                    <div className="flex-grow space-y-3">
-                      <div className="flex items-center gap-2">
-                        {isSubtask && <ChevronRight size={14} className="text-primary/40" />}
-                        <input 
-                          type="text"
-                          value={task.title}
-                          onChange={(e) => updateLocalTask(task.localId, 'title', e.target.value)}
-                          placeholder={isSubtask ? "Tên bước nhỏ..." : "Tên nhiệm vụ chính..."}
-                          className={`w-full outline-none placeholder:text-gray-300 font-bold text-gray-800 ${isSubtask ? 'text-md' : 'text-lg'}`}
-                        />
-                      </div>
-                      <textarea 
-                        value={task.description}
-                        onChange={(e) => updateLocalTask(task.localId, 'description', e.target.value)}
-                        placeholder="Mô tả công việc cần làm..."
-                        className="w-full text-sm text-gray-500 outline-none resize-none h-10 bg-transparent"
-                      />
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-4 lg:border-l lg:pl-6 border-gray-100">
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">Ưu tiên</label>
-                        <div className="flex gap-1">
-                          {['low', 'medium', 'high'].map((p) => (
-                            <button
-                              key={p}
-                              onClick={() => updateLocalTask(task.localId, 'priority', p)}
-                              className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase transition-all ${
-                                task.priority === p 
-                                  ? p === 'high' ? 'bg-red-50 text-red-600' : p === 'medium' ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'
-                                  : 'text-gray-300 hover:bg-gray-50'
-                              }`}
-                            >
-                              {p === 'low' ? 'Thấp' : p === 'medium' ? 'Vừa' : 'Cao'}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">Bắt đầu</label>
-                        <input 
-                          type="date"
-                          value={task.startDate}
-                          onChange={(e) => updateLocalTask(task.localId, 'startDate', e.target.value)}
-                          className="block text-[11px] font-medium text-gray-600 outline-none bg-gray-50 p-1.5 rounded"
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">Kết thúc</label>
-                        <input 
-                          type="date"
-                          value={task.dueDate}
-                          onChange={(e) => updateLocalTask(task.localId, 'dueDate', e.target.value)}
-                          className="block text-[11px] font-medium text-gray-600 outline-none bg-gray-50 p-1.5 rounded"
-                        />
-                      </div>
-
-                      <button 
-                        onClick={() => removeLocalTask(task.localId)}
-                        className="p-2 text-gray-300 hover:text-red-500 transition-colors"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
-                  </div>
-
-                  {!isSubtask && (
-                    <div className="mt-4 pt-4 border-t border-gray-50 flex items-center justify-between">
-                      <div className="flex items-center gap-4 text-[10px] font-bold text-gray-400 uppercase">
-                        Trạng thái: <span className="text-primary">Đang thiết lập</span>
-                      </div>
-                      <button 
-                        onClick={() => addLocalTask(task.localId)}
-                        className="flex items-center gap-1.5 text-[11px] font-bold text-primary/60 hover:text-primary transition-colors"
-                      >
-                        <Plus size={14} /> Thêm bước con
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
+              <React.Fragment key={parentTask.localId}>
+                {renderTaskItem(parentTask, false)}
+                {children.map((childTask) => renderTaskItem(childTask, true))}
+              </React.Fragment>
             );
           })}
         </div>

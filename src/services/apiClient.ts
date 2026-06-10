@@ -112,7 +112,12 @@ export const apiClient = async (endpoint: string, options: RequestOptions = {}) 
     }
 
     if (!response.ok) {
-      const errorMsg = resData?.message || (typeof resData === 'string' ? resData : null) || `Request failed with status ${response.status}`;
+      const errorMsg = 
+        resData?.message || 
+        resData?.error || 
+        resData?.detail || 
+        (typeof resData === 'string' ? resData : null) || 
+        `Request failed with status ${response.status}`;
       throw new Error(errorMsg);
     }
 
