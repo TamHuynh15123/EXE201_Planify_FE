@@ -22,16 +22,27 @@ export const adminTemplateService = {
   },
 
   async create(data: CreatePlanTemplateDto): Promise<ApiResponse<PlanTemplate>> {
-    return apiClient('/admin/plan-templates', {
+    const formData = new FormData();
+    if (data.frameworkId) formData.append('frameworkId', data.frameworkId);
+    formData.append('title', data.title);
+    if (data.description) formData.append('description', data.description);
+    formData.append('templateContent', data.templateContent);
+    formData.append('isActive', String(data.isActive));
+
+    return apiClient('/admin/plan-templates/from-text', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: formData,
     });
   },
 
   async update(id: string, data: UpdatePlanTemplateDto): Promise<ApiResponse<PlanTemplate>> {
+    const backendData = {
+      ...data,
+      templateContent: data.templateContent.split('\n'),
+    };
     return apiClient(`/admin/plan-templates/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(data),
+      body: JSON.stringify(backendData),
     });
   },
 

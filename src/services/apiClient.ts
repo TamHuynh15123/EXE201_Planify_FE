@@ -40,6 +40,10 @@ export const apiClient = async (endpoint: string, options: RequestOptions = {}) 
     ...(headers as Record<string, string>),
   };
 
+  if (restOptions.body instanceof FormData) {
+    delete mergedHeaders['Content-Type'];
+  }
+
   const executeRequest = async (): Promise<any> => {
     const response = await fetch(url, {
       ...restOptions,
