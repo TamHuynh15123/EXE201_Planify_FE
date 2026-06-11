@@ -1,10 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Zap,
-  Lock,
-  ArrowLeft,
-  Check
-} from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { subscriptionService } from '../services/subscriptionService';
 import { UserSubscription } from '../types/subscription.types';
@@ -103,26 +98,7 @@ const Profile: React.FC = () => {
             </div>
           </div>
 
-          {/* Account Actions */}
-          <div className="space-y-2">
-            <span className="text-[9px] font-black text-neutral-400 uppercase tracking-widest block mb-1">Cài đặt tài khoản</span>
-            <div className="space-y-2">
-              <button className="w-full flex items-center justify-between p-3.5 border border-neutral-200 hover:border-neutral-950 transition-all hover:bg-neutral-50 group rounded-none">
-                <div className="flex items-center gap-3">
-                  <Lock size={14} className="text-neutral-500 group-hover:text-neutral-950 transition-colors" />
-                  <span className="text-xs font-black text-neutral-950 uppercase tracking-wider">Thay đổi mật khẩu</span>
-                </div>
-                <Check size={12} className="text-neutral-950 opacity-0 group-hover:opacity-100 transition-opacity" />
-              </button>
-              <button className="w-full flex items-center justify-between p-3.5 border border-neutral-200 hover:border-neutral-950 transition-all hover:bg-neutral-50 group rounded-none">
-                <div className="flex items-center gap-3">
-                  <Zap size={14} className="text-neutral-500 group-hover:text-neutral-950 transition-colors" />
-                  <span className="text-xs font-black text-neutral-950 uppercase tracking-wider">Hành động AI của tôi</span>
-                </div>
-                <Check size={12} className="text-neutral-950 opacity-0 group-hover:opacity-100 transition-opacity" />
-              </button>
-            </div>
-          </div>
+
         </div>
 
         {/* Footer Area */}

@@ -327,7 +327,7 @@ const PlanDetail: React.FC = () => {
 
   // Initial welcome message from AI based on Plan when empty
   useEffect(() => {
-    if (plan && chatMessages.length === 0) {
+    if (plan && plan.id === id && chatMessages.length === 0) {
       setChatMessages([
         {
           role: 'assistant',
@@ -335,7 +335,7 @@ const PlanDetail: React.FC = () => {
         }
       ]);
     }
-  }, [plan, chatMessages.length]);
+  }, [plan, id, chatMessages.length]);
 
   const toInputDateFormat = (dateStr?: string) => {
     if (!dateStr) return '';
