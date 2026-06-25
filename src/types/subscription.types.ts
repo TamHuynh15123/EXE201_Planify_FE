@@ -7,6 +7,7 @@ export interface SubscriptionPlan {
   name: string;
   price: number;
   billingCycle: BillingCycle;
+  tier: string;
   aiRequestsLimit: number;
   aiRefineLimit?: number | null;
   storageLimitMb: number;
@@ -29,16 +30,24 @@ export interface UserSubscription {
   
   planName?: string;
   PlanName?: string;
+  tier?: string;
+  Tier?: string;
   aiRequestsLimit?: number;
   AiRequestsLimit?: number;
-  storageLimitMb?: number;
-  StorageLimitMb?: number;
-  maxPlans?: number;
-  MaxPlans?: number;
+  remainingAiRequests?: number;
+  RemainingAiRequests?: number;
   aiRefineUsed?: number;
   AiRefineUsed?: number;
   aiRefineLimit?: number | null;
   AiRefineLimit?: number | null;
+  remainingAiRefines?: number;
+  RemainingAiRefines?: number;
+  storageLimitMb?: number;
+  StorageLimitMb?: number;
+  maxPlans?: number;
+  MaxPlans?: number;
+  canCopyFromLibrary?: boolean;
+  canPublishToLibrary?: boolean;
 }
 
 export interface PaymentTransaction {
@@ -54,10 +63,13 @@ export interface CreateSubscriptionPlanDto {
   name: string;
   price: number;
   billingCycle: BillingCycle;
+  tier: string;
   aiRequestsLimit: number;
+  aiRefineLimit: number;
   storageLimitMb: number;
   maxPlans: number;
   features: string;
+  isActive: boolean;
 }
 
 export interface UpgradeSubscriptionDto {
@@ -66,3 +78,4 @@ export interface UpgradeSubscriptionDto {
   returnUrl?: string;
   cancelUrl?: string;
 }
+

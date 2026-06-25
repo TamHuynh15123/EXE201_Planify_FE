@@ -4,9 +4,7 @@ import { ApiResponse } from './authService';
 export interface PlanFramework {
   id: string;
   name: string;
-  slug: string;
   description?: string;
-  structure: string;
   keywords?: string;
   isActive: boolean;
 }

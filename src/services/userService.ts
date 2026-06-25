@@ -19,7 +19,7 @@ export interface UserAdminResponse {
 
 export const userService = {
   async getProfile(): Promise<ApiResponse<UserProfile>> {
-    return apiClient('/user/profile', {
+    return apiClient('/User/profile', {
       method: 'GET',
     });
   },

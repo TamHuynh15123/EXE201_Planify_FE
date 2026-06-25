@@ -34,7 +34,9 @@ const AdminSubscriptions: React.FC = () => {
     name: '',
     price: 0,
     billingCycle: 'monthly' as BillingCycle,
+    tier: 'free' as string,
     aiRequestsLimit: 0,
+    aiRefineLimit: 0,
     storageLimitMb: 0,
     maxPlans: 0,
     features: '',
@@ -65,7 +67,9 @@ const AdminSubscriptions: React.FC = () => {
         name: plan.name,
         price: plan.price,
         billingCycle: plan.billingCycle,
+        tier: plan.tier || 'free',
         aiRequestsLimit: plan.aiRequestsLimit,
+        aiRefineLimit: plan.aiRefineLimit || 0,
         storageLimitMb: plan.storageLimitMb,
         maxPlans: plan.maxPlans,
         features: plan.features,
@@ -77,7 +81,9 @@ const AdminSubscriptions: React.FC = () => {
         name: '',
         price: 0,
         billingCycle: 'monthly',
+        tier: 'free',
         aiRequestsLimit: 0,
+        aiRefineLimit: 0,
         storageLimitMb: 0,
         maxPlans: 0,
         features: '',
@@ -209,7 +215,8 @@ const AdminSubscriptions: React.FC = () => {
                 <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Tên gói</th>
                 <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Giá (VND)</th>
                 <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Chu kỳ</th>
-                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Giới hạn AI</th>
+                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Tier</th>
+                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Yêu cầu AI (Tạo/Sửa)</th>
                 <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Kế hoạch tối đa</th>
                 <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Trạng thái</th>
                 <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Thao tác</th>
@@ -218,11 +225,11 @@ const AdminSubscriptions: React.FC = () => {
             <tbody className="divide-y divide-gray-50">
               {isLoading ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-10 text-center text-gray-500">Đang tải dữ liệu...</td>
+                  <td colSpan={8} className="px-6 py-10 text-center text-gray-500">Đang tải dữ liệu...</td>
                 </tr>
               ) : filteredPlans.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-10 text-center text-gray-500">Không tìm thấy gói nào</td>
+                  <td colSpan={8} className="px-6 py-10 text-center text-gray-500">Không tìm thấy gói nào</td>
                 </tr>
               ) : filteredPlans.map((plan) => (
                 <tr key={plan.id} className="hover:bg-gray-50/50 transition-colors">
@@ -235,8 +242,19 @@ const AdminSubscriptions: React.FC = () => {
                   <td className="px-6 py-4">
                     <span className="capitalize text-gray-600">{plan.billingCycle}</span>
                   </td>
+                  <td className="px-6 py-4">
+                    <span className={`px-2 py-0.5 rounded text-xs font-black uppercase ${
+                      plan.tier === 'vip' 
+                        ? 'bg-purple-100 text-purple-700' 
+                        : plan.tier === 'premium' 
+                          ? 'bg-indigo-100 text-indigo-700' 
+                          : 'bg-gray-100 text-gray-700'
+                    }`}>
+                      {plan.tier || 'free'}
+                    </span>
+                  </td>
                   <td className="px-6 py-4 text-gray-600">
-                    {plan.aiRequestsLimit} reqs/mo
+                    Tạo: {plan.aiRequestsLimit} | Sửa: {plan.aiRefineLimit ?? 0}
                   </td>
                   <td className="px-6 py-4 text-gray-600">
                     {plan.maxPlans} plans
@@ -325,12 +343,36 @@ const AdminSubscriptions: React.FC = () => {
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm font-semibold text-gray-700">Giới hạn yêu cầu AI</label>
+                  <label className="text-sm font-semibold text-gray-700">Phân loại Gói (Tier)</label>
+                  <select 
+                    className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none capitalize"
+                    value={formData.tier}
+                    onChange={e => setFormData({...formData, tier: e.target.value})}
+                  >
+                    <option value="free">Free</option>
+                    <option value="premium">Premium</option>
+                    <option value="vip">VIP</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-sm font-semibold text-gray-700">Giới hạn yêu cầu AI (Tạo)</label>
                   <input 
                     type="number" 
                     className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
                     value={formData.aiRequestsLimit}
                     onChange={e => setFormData({...formData, aiRequestsLimit: parseInt(e.target.value)})}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-semibold text-gray-700">Giới hạn sửa đổi AI (Refine)</label>
+                  <input 
+                    type="number" 
+                    className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
+                    value={formData.aiRefineLimit}
+                    onChange={e => setFormData({...formData, aiRefineLimit: parseInt(e.target.value)})}
                   />
                 </div>
               </div>

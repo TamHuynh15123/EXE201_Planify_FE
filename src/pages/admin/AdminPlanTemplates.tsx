@@ -319,31 +319,18 @@ const AdminPlanTemplates: React.FC = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Framework Áp Dụng</label>
-                  <select
-                    value={formData.frameworkId || ''}
-                    onChange={(e) => setFormData({ ...formData, frameworkId: e.target.value || null })}
-                    className="w-full p-3.5 bg-gray-50 border border-transparent rounded-2xl outline-none focus:bg-white focus:border-primary/20 transition-all text-xs font-bold text-gray-700"
-                  >
-                    <option value="">Không bắt buộc (Tự do)</option>
-                    {frameworks.map(fw => (
-                      <option key={fw.id} value={fw.id}>{fw.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Danh mục (Category ID)</label>
-                  <input 
-                    type="text"
-                    value={formData.categoryId || ''}
-                    onChange={(e) => setFormData({ ...formData, categoryId: e.target.value || null })}
-                    placeholder="3fa85f64-5717-4562-b3fc-2c963f66afa6"
-                    className="w-full p-3.5 bg-gray-50 border border-transparent rounded-2xl outline-none focus:bg-white focus:border-primary/20 transition-all text-xs font-semibold text-gray-700"
-                  />
-                </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Framework Áp Dụng</label>
+                <select
+                  value={formData.frameworkId || ''}
+                  onChange={(e) => setFormData({ ...formData, frameworkId: e.target.value || null })}
+                  className="w-full p-3.5 bg-gray-50 border border-transparent rounded-2xl outline-none focus:bg-white focus:border-primary/20 transition-all text-xs font-bold text-gray-700"
+                >
+                  <option value="">Không bắt buộc (Tự do)</option>
+                  {frameworks.map(fw => (
+                    <option key={fw.id} value={fw.id}>{fw.name}</option>
+                  ))}
+                </select>
               </div>
 
               <div className="space-y-1">

@@ -4,7 +4,6 @@ import {
   User, Calendar, ShieldAlert 
 } from 'lucide-react';
 import { adminCommunityService } from '../../services/adminCommunityService';
-import { communityService } from '../../services/communityService';
 import { CommunityPlanSummary, CommunityPlan } from '../../types/community.types';
 import { useToast } from '../../context/ToastContext';
 
@@ -84,7 +83,7 @@ const AdminCommunityPlans: React.FC = () => {
   const handlePreview = async (id: string) => {
     setIsPreviewLoading(true);
     try {
-      const response = await communityService.getById(id);
+      const response = await adminCommunityService.getDetail(id);
       const data = response.data || (response as any).Data || response;
       if (data) {
         setPreviewPlan(data);

@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { communityService } from '../services/communityService';
 import { CommunityPlan } from '../types/community.types';
+import { PlanTask } from '../types/plan.types';
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
 
@@ -106,7 +107,11 @@ const CommunityPlanDetail: React.FC = () => {
     );
   }
 
-  const rootTasks = communityPlan.plan?.tasks?.filter(t => !t.parentTaskId) || [];
+  const allTasks = communityPlan.plan?.tasks || [];
+  const hasParentInList = allTasks.some(t => t.parentTaskId !== null);
+  const rootTasks = hasParentInList 
+    ? allTasks.filter(t => !t.parentTaskId)
+    : allTasks;
 
   const getPriorityColor = (priority: string) => {
     switch (priority.toLowerCase()) {
@@ -200,7 +205,9 @@ const CommunityPlanDetail: React.FC = () => {
           ) : (
             <div className="space-y-6">
               {rootTasks.map((task) => {
-                const subtasks = communityPlan.plan?.tasks?.filter(t => t.parentTaskId === task.id) || [];
+                const subtasks: PlanTask[] = hasParentInList 
+                  ? allTasks.filter(t => t.parentTaskId === task.id)
+                  : (task.subTasks || (task as any).subtasks || []);
                 return (
                   <div key={task.id} className="border border-neutral-200 p-5 space-y-4">
                     {/* Parent Task Header */}

@@ -378,7 +378,7 @@ const Planning: React.FC = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Hạn chót</label>
                 <div className="relative">
@@ -408,18 +408,6 @@ const Planning: React.FC = () => {
                     <Globe size={16} /> Công khai
                   </button>
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Danh mục</label>
-                <select 
-                  value={planData.categoryId}
-                  onChange={(e) => setPlanData({...planData, categoryId: e.target.value})}
-                  className="w-full p-4 bg-gray-50 border border-transparent rounded-xl outline-none focus:bg-white focus:border-primary/30 transition-all text-gray-700 appearance-none"
-                >
-                  <option value="3fa85f64-5717-4562-b3fc-2c963f66afa6">Học tập & Phát triển</option>
-                  <option value="8a7b6c5d-4e3f-2a1b-0c9d-8e7f6a5b4c3d">Công việc</option>
-                </select>
               </div>
             </div>
           </div>

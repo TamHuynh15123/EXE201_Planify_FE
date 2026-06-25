@@ -1,9 +1,8 @@
 export interface PlanFramework {
   id: string;
   name: string;
-  slug: string;
   description: string;
-  structure: string;
+  keywords?: string;
   isActive: boolean;
   createdBy: string;
   createdAt: string;
@@ -12,17 +11,15 @@ export interface PlanFramework {
 
 export interface CreatePlanFrameworkDto {
   name: string;
-  slug: string;
   description: string;
-  structure: string;
+  keywords?: string;
   isActive: boolean;
 }
 
 export interface UpdatePlanFrameworkDto {
   name: string;
-  slug: string;
   description: string;
-  structure: string;
+  keywords?: string;
   isActive: boolean;
 }
 

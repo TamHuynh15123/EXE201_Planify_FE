@@ -50,33 +50,33 @@ export const subscriptionService = {
 
   // User Endpoints
   async getActivePlans(): Promise<ApiResponse<SubscriptionPlan[]>> {
-    return apiClient('/subscriptions/plans', {
+    return apiClient('/Subscriptions/plans', {
       method: 'GET',
       skipAuth: true,
     });
   },
 
   async getCurrentSubscription(): Promise<ApiResponse<UserSubscription>> {
-    return apiClient('/subscriptions/current', {
+    return apiClient('/Subscriptions/current', {
       method: 'GET',
     });
   },
 
   async upgradeSubscription(data: UpgradeSubscriptionDto): Promise<ApiResponse<any>> {
-    return apiClient('/subscriptions/upgrade', {
+    return apiClient('/Subscriptions/upgrade', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   },
 
   async checkStatus(orderCode: string): Promise<ApiResponse<string>> {
-    return apiClient(`/subscriptions/check-status/${orderCode}`, {
+    return apiClient(`/Subscriptions/check-status/${orderCode}`, {
       method: 'GET',
     });
   },
 
   async getCheckoutInfo(orderCode: string): Promise<ApiResponse<any>> {
-    return apiClient(`/subscriptions/checkout-info/${orderCode}`, {
+    return apiClient(`/Subscriptions/checkout-info/${orderCode}`, {
       method: 'GET',
       skipAuth: true,
     });

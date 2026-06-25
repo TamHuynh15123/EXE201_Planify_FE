@@ -9,6 +9,12 @@ export const adminCommunityService = {
     });
   },
 
+  async getDetail(id: string): Promise<ApiResponse<CommunityPlan>> {
+    return apiClient(`/admin/community-plans/${id}`, {
+      method: 'GET',
+    });
+  },
+
   async approve(id: string): Promise<ApiResponse<{ message: string; communityPlan: CommunityPlan }>> {
     return apiClient(`/admin/community-plans/${id}/approve`, {
       method: 'POST',

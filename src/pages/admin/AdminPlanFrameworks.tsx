@@ -6,8 +6,7 @@ import {
   Trash2, 
   CheckCircle2, 
   XCircle, 
-  Grid,
-  Code
+  Grid
 } from 'lucide-react';
 import { adminFrameworkService } from '../../services/adminFrameworkService';
 import { PlanFramework } from '../../types/admin.types';
@@ -32,9 +31,8 @@ const AdminPlanFrameworks: React.FC = () => {
   // Form State
   const [formData, setFormData] = useState({
     name: '',
-    slug: '',
     description: '',
-    structure: '',
+    keywords: '',
     isActive: true,
   });
 
@@ -42,7 +40,6 @@ const AdminPlanFrameworks: React.FC = () => {
     try {
       setIsLoading(true);
       const response = await adminFrameworkService.getAll();
-      // Handle the C# ResponseDto structure if nested under data/Data
       const data = (response as any).data || (response as any).Data || response;
       if (Array.isArray(data)) {
         setFrameworks(data);
@@ -66,18 +63,16 @@ const AdminPlanFrameworks: React.FC = () => {
       setEditingFramework(fw);
       setFormData({
         name: fw.name,
-        slug: fw.slug,
         description: fw.description || '',
-        structure: fw.structure || '',
+        keywords: fw.keywords || '',
         isActive: fw.isActive,
       });
     } else {
       setEditingFramework(null);
       setFormData({
         name: '',
-        slug: '',
         description: '',
-        structure: '{"phases": []}',
+        keywords: '',
         isActive: true,
       });
     }
@@ -86,17 +81,24 @@ const AdminPlanFrameworks: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name.trim() || !formData.slug.trim()) {
-      showToast('Tên và Slug không được để trống', 'warning');
+    if (!formData.name.trim()) {
+      showToast('Tên framework không được để trống', 'warning');
       return;
     }
 
+    const payload = {
+      name: formData.name,
+      description: formData.description,
+      keywords: formData.keywords || undefined,
+      isActive: formData.isActive
+    };
+
     try {
       if (editingFramework) {
-        await adminFrameworkService.update(editingFramework.id, formData);
+        await adminFrameworkService.update(editingFramework.id, payload);
         showToast('Cập nhật framework thành công', 'success');
       } else {
-        await adminFrameworkService.create(formData);
+        await adminFrameworkService.create(payload);
         showToast('Tạo framework mới thành công', 'success');
       }
       setIsModalOpen(false);
@@ -127,16 +129,14 @@ const AdminPlanFrameworks: React.FC = () => {
 
   const handleToggleActive = async (fw: PlanFramework) => {
     try {
-      // Toggle using update or deactivate
       if (fw.isActive) {
         await adminFrameworkService.deactivate(fw.id);
         showToast(`Đã vô hiệu hóa framework "${fw.name}"`, 'info');
       } else {
         await adminFrameworkService.update(fw.id, {
           name: fw.name,
-          slug: fw.slug,
           description: fw.description || '',
-          structure: fw.structure || '',
+          keywords: fw.keywords,
           isActive: true
         });
         showToast(`Đã kích hoạt framework "${fw.name}"`, 'success');
@@ -149,7 +149,7 @@ const AdminPlanFrameworks: React.FC = () => {
 
   const filteredFrameworks = frameworks.filter(fw => 
     fw.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    fw.slug.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (fw.keywords || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
     (fw.description || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -197,9 +197,6 @@ const AdminPlanFrameworks: React.FC = () => {
             <div key={fw.id} className="bg-white border border-gray-100 rounded-[2rem] p-6 shadow-sm hover:shadow-md hover:border-gray-200 transition-all flex flex-col gap-4">
               <div className="flex items-start justify-between gap-4">
                 <div className="space-y-1.5 min-w-0">
-                  <span className="text-[9px] font-black uppercase bg-gray-50 text-gray-400 px-2 py-0.5 rounded border border-gray-100 block w-max">
-                    {fw.slug}
-                  </span>
                   <h3 className="font-black text-gray-800 text-sm truncate">{fw.name}</h3>
                 </div>
                 <button 
@@ -215,10 +212,9 @@ const AdminPlanFrameworks: React.FC = () => {
                 {fw.description || 'Không có mô tả chi tiết cho framework này.'}
               </p>
 
-              {fw.structure && (
+              {fw.keywords && (
                 <div className="bg-gray-50 p-3 rounded-2xl flex items-center gap-2 text-gray-500">
-                  <Code size={14} className="text-primary flex-shrink-0" />
-                  <span className="text-[10px] font-bold truncate tracking-tight">{fw.structure}</span>
+                  <span className="text-[10px] font-bold tracking-tight">Từ khóa: <span className="font-medium text-gray-600">{fw.keywords}</span></span>
                 </div>
               )}
 
@@ -278,18 +274,6 @@ const AdminPlanFrameworks: React.FC = () => {
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Slug (Định danh URL)</label>
-                <input 
-                  type="text"
-                  required
-                  value={formData.slug}
-                  onChange={(e) => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/\s+/g, '-') })}
-                  placeholder="Ví dụ: agile-roadmap, pomodoro-focus..."
-                  className="w-full p-3.5 bg-gray-50 border border-transparent rounded-2xl outline-none focus:bg-white focus:border-primary/20 transition-all text-xs font-semibold text-gray-800"
-                />
-              </div>
-
-              <div className="space-y-1">
                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Mô Tả Chi Tiết</label>
                 <textarea 
                   value={formData.description}
@@ -300,12 +284,13 @@ const AdminPlanFrameworks: React.FC = () => {
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Cấu Trúc Framework (JSON)</label>
-                <textarea 
-                  value={formData.structure}
-                  onChange={(e) => setFormData({ ...formData, structure: e.target.value })}
-                  placeholder='{"phases": [{"name": "Phase 1", "days": 15}]}'
-                  className="w-full h-36 p-3.5 bg-gray-50 border border-transparent rounded-2xl font-mono text-[10px] outline-none focus:bg-white focus:border-primary/20 transition-all text-gray-600 resize-none leading-relaxed"
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Từ khóa (Keywords)</label>
+                <input 
+                  type="text"
+                  value={formData.keywords}
+                  onChange={(e) => setFormData({ ...formData, keywords: e.target.value })}
+                  placeholder="Ví dụ: coding, logic, study, ielts..."
+                  className="w-full p-3.5 bg-gray-50 border border-transparent rounded-2xl outline-none focus:bg-white focus:border-primary/20 transition-all text-xs font-semibold text-gray-800"
                 />
               </div>
 
