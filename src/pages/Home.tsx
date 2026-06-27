@@ -1,8 +1,29 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Sparkles, Target, Clock, CheckCircle2, ArrowRight, BarChart3, Users2 } from 'lucide-react';
+import { Sparkles, Target, Clock, CheckCircle2, ArrowRight, BarChart3, Users2, Volume2, VolumeX, Play, Pause } from 'lucide-react';
 
 const Home: React.FC = () => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isMuted, setIsMuted] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(true);
+
+  const toggleMute = () => {
+    if (videoRef.current) {
+      videoRef.current.muted = !videoRef.current.muted;
+      setIsMuted(videoRef.current.muted);
+    }
+  };
+
+  const togglePlay = () => {
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+      } else {
+        videoRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
   return (
     <div className="pt-24">
       {/* Hero Section */}
@@ -33,10 +54,37 @@ const Home: React.FC = () => {
           </div>
 
           {/* Right Image */}
-          <div className="lg:w-1/2 relative">
+          <div className="lg:w-1/2 relative animate-fade-in">
             <div className="absolute -inset-4 bg-gradient-ai opacity-20 blur-3xl rounded-full"></div>
-            <div className="relative bg-white p-2 rounded-2xl shadow-2xl border border-gray-100 overflow-hidden">
-               <img src="/hero-ai.png" alt="AI Planning" className="w-full h-auto rounded-xl" />
+            <div className="relative bg-white p-2 rounded-2xl shadow-2xl border border-gray-100 overflow-hidden group">
+               <video 
+                 ref={videoRef}
+                 src="https://isbemmj4ezqed63y.public.blob.vercel-storage.com/TVC%20OC1.mp4" 
+                 autoPlay 
+                 loop 
+                 muted 
+                 playsInline 
+                 poster="/hero-ai.png"
+                 className="w-full h-auto rounded-xl object-cover" 
+               />
+               {/* Sleek Custom Control Overlay */}
+               <div className="absolute bottom-4 right-4 flex items-center gap-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/40 p-2 rounded-full backdrop-blur-md border border-white/10">
+                 <button 
+                   onClick={togglePlay} 
+                   className="p-1.5 hover:bg-white/20 text-white rounded-full transition-all duration-200 cursor-pointer"
+                   title={isPlaying ? "Tạm dừng" : "Phát"}
+                 >
+                   {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
+                 </button>
+                 <div className="w-[1px] h-4 bg-white/20"></div>
+                 <button 
+                   onClick={toggleMute} 
+                   className="p-1.5 hover:bg-white/20 text-white rounded-full transition-all duration-200 cursor-pointer"
+                   title={isMuted ? "Bật âm thanh" : "Tắt âm thanh"}
+                 >
+                   {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+                 </button>
+               </div>
             </div>
           </div>
         </div>
