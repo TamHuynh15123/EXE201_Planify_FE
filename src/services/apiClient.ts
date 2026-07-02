@@ -70,6 +70,7 @@ export const apiClient = async (endpoint: string, options: RequestOptions = {}) 
       const rToken = getRefreshToken();
       if (!rToken) {
         clearAuthData();
+        window.dispatchEvent(new StorageEvent('storage', { key: 'accessToken', newValue: null }));
         // If it's a GET request, retry anonymously
         if (restOptions.method === 'GET' || !restOptions.method) {
           return apiClient(endpoint, { ...options, skipAuth: true });
@@ -98,7 +99,7 @@ export const apiClient = async (endpoint: string, options: RequestOptions = {}) 
         } catch (err) {
           isRefreshing = false;
           clearAuthData();
-          window.dispatchEvent(new Event('storage')); // Notify components to reload/logout
+          window.dispatchEvent(new StorageEvent('storage', { key: 'accessToken', newValue: null })); // Notify components to reload/logout
           
           // If it's a GET request, retry anonymously
           if (restOptions.method === 'GET' || !restOptions.method) {
