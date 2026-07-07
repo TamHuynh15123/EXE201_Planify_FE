@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  MessageSquare, ThumbsUp, ThumbsDown, Star, RefreshCw,
-  ChevronLeft, ChevronRight, Filter, CheckCircle2, Clock, Eye
+  ThumbsUp, ThumbsDown, Star, RefreshCw,
+  ChevronLeft, ChevronRight, Eye
 } from 'lucide-react';
 import {
   adminFeedbackService,
