@@ -58,5 +58,19 @@ export const communityService = {
     return apiClient('/community-plans/my', {
       method: 'GET',
     });
+  },
+
+  async submitPlanFeedback(dto: {
+    planId: string;
+    communityPlanId?: string;
+    isEffective: boolean;
+    reason?: string;
+    suggestions?: string;
+    rating?: number;
+  }): Promise<ApiResponse<any>> {
+    return apiClient('/community-plans/feedback', {
+      method: 'POST',
+      body: JSON.stringify(dto),
+    });
   }
 };

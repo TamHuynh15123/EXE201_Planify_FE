@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
+import { useParams, useNavigate, Link, useLocation, useSearchParams } from 'react-router-dom';
 import { 
   ListTree, RefreshCw, Clock, AlertCircle, 
   Trash2, Send, User, Calendar, BookOpen, 
@@ -12,9 +12,10 @@ import { aiService } from '../services/aiService';
 import { communityService } from '../services/communityService';
 import { useToast } from '../context/ToastContext';
 import ConfirmModal from '../components/ConfirmModal';
+import { PlanCompletionFeedbackModal } from '../components/PlanCompletionFeedbackModal';
 
 // Helper component to render AI messages with simple custom formatting for readability
-const FormattedMessage: React.FC<{ content: string }> = ({ content }) => {
+const FormattedMessage: React.FC<{ content: string; onApplyAction?: () => void }> = ({ content, onApplyAction }) => {
   if (!content) return null;
 
   // Split by newline to process line by line
@@ -56,6 +57,20 @@ const FormattedMessage: React.FC<{ content: string }> = ({ content }) => {
 
   lines.forEach((line, index) => {
     const trimmedLine = line.trim();
+
+    // Render action button placeholder [APPLY_DELAY_FIX]
+    if (trimmedLine === '[APPLY_DELAY_FIX]' && onApplyAction) {
+      renderedElements.push(
+        <button
+          key={`action-${index}`}
+          onClick={onApplyAction}
+          className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 bg-primary text-white text-xs font-bold rounded-2xl hover:bg-primary/90 active:scale-[0.98] transition-all shadow-sm shadow-primary/20"
+        >
+          ✅ Áp dụng đề xuất AI vào kế hoạch
+        </button>
+      );
+      return;
+    }
     
     // Check if line is a bullet point
     if (trimmedLine.startsWith('- ') || trimmedLine.startsWith('* ') || trimmedLine.startsWith('• ')) {
@@ -176,6 +191,13 @@ const PlanDetail: React.FC = () => {
 
   const handleOpenPublishModal = () => {
     if (!plan) return;
+
+    // Yêu cầu hoàn thành 100% tiến độ mới được publish
+    if (plan.progress < 100 && plan.status !== 'completed') {
+      showToast('Kế hoạch phải đạt 100% tiến độ mới có thể chia sẻ lên thư viện cộng đồng!', 'warning');
+      return;
+    }
+
     setPublishTitle(plan.title);
     setPublishDescription(plan.description || '');
     setIsPublishModalOpen(true);
@@ -210,12 +232,19 @@ const PlanDetail: React.FC = () => {
   const [plansList, setPlansList] = useState<Plan[]>([]);
   const [plansLoading, setPlansLoading] = useState(true);
   const [searchHistoryQuery, setSearchHistoryQuery] = useState('');
-  
+
   // Workspace AI Chat States
   const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
   const [chatInput, setChatInput] = useState('');
   const [isChatLoading, setIsChatLoading] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+
+  // Delay Alert States
+  const [searchParams] = useSearchParams();
+  const [pendingDelayPlanData, setPendingDelayPlanData] = useState<any>(null);
+
+  // Plan Completion Feedback
+  const [showCompletionFeedback, setShowCompletionFeedback] = useState(false);
 
   // Fetch all plans list
   const fetchAllPlans = useCallback(async () => {
@@ -302,6 +331,94 @@ const PlanDetail: React.FC = () => {
   useEffect(() => {
     fetchPlanDetails();
   }, [fetchPlanDetails]);
+
+  // ── Plan Completion Feedback: hiện popup khi plan đạt 100% ──────────────────────
+  useEffect(() => {
+    if (!plan?.id || !plan.isAIGenerated) return;
+    if (plan.progress < 100 && plan.status !== 'completed' && plan.status !== 'done') return;
+
+    const key = `plan_feedback_done_${plan.id}`;
+    if (localStorage.getItem(key)) return; // đã gửi hoặc đã skip
+
+    // Delay nhỏ để user thấy trang đã load xong
+    const timer = setTimeout(() => setShowCompletionFeedback(true), 800);
+    return () => clearTimeout(timer);
+  }, [plan?.id, plan?.progress, plan?.status, plan?.isAIGenerated]);
+
+  // ── Delay Alert: tự động phân tích khi navigate từ thông báo ────────────────
+  useEffect(() => {
+    const action = searchParams.get('action');
+    if (action !== 'analyze-delay' || !plan?.id) return;
+
+    // Xóa query param khỏi URL (không reload)
+    window.history.replaceState({}, '', window.location.pathname);
+
+    const runAnalysis = async () => {
+      setIsChatLoading(true);
+      setChatMessages(prev => [
+        ...prev,
+        { role: 'assistant', content: '🔍 Đang phân tích tình trạng trễ tiến độ của kế hoạch...' }
+      ]);
+      try {
+        const res = await aiService.analyzeDelay(plan.id);
+        const strategyLabel = res.strategy === 'reschedule'
+          ? '📅 **Dồn lại lịch:** Sắp xếp các task trễ sang những ngày còn trống, giữ nguyên deadline chung.'
+          : '📆 **Mở rộng deadline:** Thời gian còn lại quá ít, AI đề xuất điều chỉnh deadline tổng thể.';
+
+        const summaryMsg = `**📊 Phân tích trễ tiến độ:**
+- 🔴 Số task quá hạn: **${res.overdueCount} task**
+- ⏰ Thời gian đến deadline: **${res.daysToDeadline} ngày**
+- Chiến lược được chọn: ${strategyLabel}
+
+${res.message}
+
+Bạn có muốn áp dụng đề xuất này không?
+[APPLY_DELAY_FIX]`;
+
+        setPendingDelayPlanData(res.proposedPlanData);
+        setChatMessages(prev => {
+          const updated = [...prev];
+          updated[updated.length - 1] = { role: 'assistant', content: summaryMsg };
+          return updated;
+        });
+      } catch (err: any) {
+        setChatMessages(prev => {
+          const updated = [...prev];
+          updated[updated.length - 1] = { role: 'assistant', content: `❌ Không thể phân tích: ${err.message}` };
+          return updated;
+        });
+      } finally {
+        setIsChatLoading(false);
+      }
+    };
+
+    runAnalysis();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, plan?.id]);
+
+  // ── Apply delay fix khi user bấm đồng ý ────────────────────────────────────
+  const handleApplyDelayFix = async () => {
+    if (!plan?.id || !pendingDelayPlanData) return;
+    setIsChatLoading(true);
+    setChatMessages(prev => [...prev, { role: 'user', content: '✅ Tôi đồng ý áp dụng đề xuất này.' }]);
+    try {
+      await aiService.applyDelayFix(plan.id, pendingDelayPlanData);
+      setPendingDelayPlanData(null);
+      showToast('Đã áp dụng đề xuất AI thành công!', 'success');
+      await fetchPlanDetails();
+      setChatMessages(prev => [
+        ...prev,
+        { role: 'assistant', content: '🎉 Kế hoạch đã được tối ưu lại! Các task trễ đã được sắp xếp hợp lý hơn.' }
+      ]);
+    } catch (err: any) {
+      setChatMessages(prev => [
+        ...prev,
+        { role: 'assistant', content: `❌ Áp dụng thất bại: ${err.message}` }
+      ]);
+    } finally {
+      setIsChatLoading(false);
+    }
+  };
 
   // Sync scroll for workspace AI chat container
   useEffect(() => {
@@ -1213,7 +1330,7 @@ const PlanDetail: React.FC = () => {
                       ? 'bg-primary text-white rounded-tr-none shadow-xs shadow-primary/10' 
                       : 'bg-white text-gray-700 rounded-tl-none border border-gray-100 shadow-xs'
                   }`}>
-                    {msg.role === 'user' ? msg.content : <FormattedMessage content={msg.content} />}
+                    {msg.role === 'user' ? msg.content : <FormattedMessage content={msg.content} onApplyAction={handleApplyDelayFix} />}
                   </div>
                 </div>
               </div>
@@ -1650,6 +1767,17 @@ const PlanDetail: React.FC = () => {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Plan Completion Feedback Popup */}
+      {plan && (
+        <PlanCompletionFeedbackModal
+          isOpen={showCompletionFeedback}
+          planId={plan.id}
+          planTitle={plan.title}
+          isAIGenerated={plan.isAIGenerated ?? false}
+          onClose={() => setShowCompletionFeedback(false)}
+        />
       )}
     </div>
   );

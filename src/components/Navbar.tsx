@@ -15,10 +15,12 @@ import {
   ShieldAlert, 
   Sparkles, 
   Clock, 
-  Info 
+  Info,
+  MessageSquarePlus
 } from 'lucide-react';
 import { notificationService } from '../services/notificationService';
 import { Notification } from '../types/notification.types';
+import { GeneralFeedbackModal } from './GeneralFeedbackModal';
 
 const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
@@ -31,6 +33,9 @@ const Navbar: React.FC = () => {
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isNotifLoading, setIsNotifLoading] = useState(false);
   const notifDropdownRef = useRef<HTMLDivElement>(null);
+
+  // General Feedback State
+  const [isGeneralFeedbackOpen, setIsGeneralFeedbackOpen] = useState(false);
 
   useClickOutside(dropdownRef, () => setIsDropdownOpen(false));
   useClickOutside(notifDropdownRef, () => setIsNotifOpen(false));
@@ -167,6 +172,7 @@ const Navbar: React.FC = () => {
     `text-sm font-medium transition-colors ${isActive ? 'text-primary border-b-2 border-primary pb-1' : 'text-gray-600 hover:text-primary'}`;
 
   return (
+    <>
     <nav className="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-md z-50 border-b border-gray-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
@@ -208,6 +214,15 @@ const Navbar: React.FC = () => {
               </>
             ) : (
               <div className="flex items-center space-x-4">
+                {/* General Feedback Button */}
+                <button
+                  onClick={() => setIsGeneralFeedbackOpen(true)}
+                  title="Gửi góp ý"
+                  className="p-2 rounded-full border border-transparent text-gray-500 hover:bg-gray-50 hover:text-primary hover:border-primary/20 transition-all"
+                >
+                  <MessageSquarePlus size={20} />
+                </button>
+
                 {/* Notification Bell */}
                 <div className="relative" ref={notifDropdownRef}>
                   <button
@@ -276,8 +291,13 @@ const Navbar: React.FC = () => {
                                     setUnreadCount(prev => Math.max(0, prev - 1));
                                   }
                                   setIsNotifOpen(false);
-                                  if (notif.referenceId && (notif.type === 'deadline' || notif.type === 'task' || notif.type === 'reminder')) {
-                                    window.location.href = `/plans/${notif.referenceId}`;
+                                  if (notif.referenceId) {
+                                    if (notif.type === 'delay_alert') {
+                                      // Chuyển sang plan + kích hoạt analyze delay
+                                      window.location.href = `/plans/${notif.referenceId}?action=analyze-delay`;
+                                    } else if (notif.type === 'deadline' || notif.type === 'task' || notif.type === 'reminder') {
+                                      window.location.href = `/plans/${notif.referenceId}`;
+                                    }
                                   }
                                 }}
                                 className={`flex items-start gap-3 px-5 py-3.5 hover:bg-gray-50/80 transition-all cursor-pointer group relative ${
@@ -403,6 +423,13 @@ const Navbar: React.FC = () => {
         </div>
       </div>
     </nav>
+
+    {/* General Feedback Modal */}
+    <GeneralFeedbackModal
+      isOpen={isGeneralFeedbackOpen}
+      onClose={() => setIsGeneralFeedbackOpen(false)}
+    />
+    </>
   );
 };
 

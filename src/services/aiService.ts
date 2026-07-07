@@ -33,6 +33,26 @@ export interface RefinePlanResponse {
   elapsedMs: number;
 }
 
+// ── Delay Alert Types ─────────────────────────────────────────────────────────
+
+export interface AnalyzeDelayResponse {
+  proposedPlanData: any; // JSON plan đề xuất từ AI (chưa lưu DB)
+  message: string;       // Giải thích của AI
+  strategy: 'reschedule' | 'extend_deadline';
+  overdueCount: number;
+  daysToDeadline: number;
+  model: string;
+  elapsedMs: number;
+}
+
+export interface ApplyDelayFixResponse {
+  message: string;
+  planId: string;
+  plan: Plan;
+}
+
+// ── Service ───────────────────────────────────────────────────────────────────
+
 export const aiService = {
   async chat(data: ChatRequest): Promise<ChatResponse> {
     return apiClient('/ai/chat', {
@@ -58,5 +78,28 @@ export const aiService = {
       method: 'POST',
       body: JSON.stringify({ planId, instruction }),
     });
-  }
+  },
+
+  /**
+   * Phân tích tình trạng trễ tiến độ của plan.
+   * POST /api/ai/analyze-delay
+   * Chỉ trả về đề xuất, KHÔNG lưu DB.
+   */
+  async analyzeDelay(planId: string): Promise<AnalyzeDelayResponse> {
+    return apiClient('/ai/analyze-delay', {
+      method: 'POST',
+      body: JSON.stringify({ planId }),
+    });
+  },
+
+  /**
+   * Áp dụng đề xuất AI vào DB sau khi user xác nhận.
+   * POST /api/ai/apply-delay-fix
+   */
+  async applyDelayFix(planId: string, proposedPlanData: any): Promise<ApplyDelayFixResponse> {
+    return apiClient('/ai/apply-delay-fix', {
+      method: 'POST',
+      body: JSON.stringify({ planId, planData: proposedPlanData }),
+    });
+  },
 };
