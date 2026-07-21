@@ -84,11 +84,12 @@ export const aiService = {
    * Phân tích tình trạng trễ tiến độ của plan.
    * POST /api/ai/analyze-delay
    * Chỉ trả về đề xuất, KHÔNG lưu DB.
+   * @param forceStrategy Nếu truyền vào, BE sẽ ép AI dùng strategy này (dùng khi user "không đồng ý" với đề xuất ban đầu).
    */
-  async analyzeDelay(planId: string): Promise<AnalyzeDelayResponse> {
+  async analyzeDelay(planId: string, forceStrategy?: 'reschedule' | 'extend_deadline'): Promise<AnalyzeDelayResponse> {
     return apiClient('/ai/analyze-delay', {
       method: 'POST',
-      body: JSON.stringify({ planId }),
+      body: JSON.stringify({ planId, forceStrategy }),
     });
   },
 

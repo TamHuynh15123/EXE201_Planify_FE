@@ -15,7 +15,7 @@ import ConfirmModal from '../components/ConfirmModal';
 import { PlanCompletionFeedbackModal } from '../components/PlanCompletionFeedbackModal';
 
 // Helper component to render AI messages with simple custom formatting for readability
-const FormattedMessage: React.FC<{ content: string; onApplyAction?: () => void }> = ({ content, onApplyAction }) => {
+const FormattedMessage: React.FC<{ content: string; onApplyAction?: () => void; onRejectAction?: () => void }> = ({ content, onApplyAction, onRejectAction }) => {
   if (!content) return null;
 
   // Split by newline to process line by line
@@ -58,16 +58,27 @@ const FormattedMessage: React.FC<{ content: string; onApplyAction?: () => void }
   lines.forEach((line, index) => {
     const trimmedLine = line.trim();
 
-    // Render action button placeholder [APPLY_DELAY_FIX]
-    if (trimmedLine === '[APPLY_DELAY_FIX]' && onApplyAction) {
+    // Render action buttons placeholder [APPLY_DELAY_FIX]
+    if (trimmedLine === '[APPLY_DELAY_FIX]') {
       renderedElements.push(
-        <button
-          key={`action-${index}`}
-          onClick={onApplyAction}
-          className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 bg-primary text-white text-xs font-bold rounded-2xl hover:bg-primary/90 active:scale-[0.98] transition-all shadow-sm shadow-primary/20"
-        >
-          ✅ Áp dụng đề xuất AI vào kế hoạch
-        </button>
+        <div key={`action-${index}`} className="mt-3 flex gap-2">
+          {onApplyAction && (
+            <button
+              onClick={onApplyAction}
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-primary text-white text-xs font-bold rounded-2xl hover:bg-primary/90 active:scale-[0.98] transition-all shadow-sm shadow-primary/20"
+            >
+              ✅ Đồng ý áp dụng
+            </button>
+          )}
+          {onRejectAction && (
+            <button
+              onClick={onRejectAction}
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gray-100 text-gray-700 text-xs font-bold rounded-2xl hover:bg-gray-200 active:scale-[0.98] transition-all border border-gray-200"
+            >
+              ❌ Không đồng ý
+            </button>
+          )}
+        </div>
       );
       return;
     }
@@ -242,6 +253,8 @@ const PlanDetail: React.FC = () => {
   // Delay Alert States
   const [searchParams] = useSearchParams();
   const [pendingDelayPlanData, setPendingDelayPlanData] = useState<any>(null);
+  // Strategy AI đã chọn — dùng để biết strategy ngược khi user bấm "Không đồng ý"
+  const [pendingDelayStrategy, setPendingDelayStrategy] = useState<'reschedule' | 'extend_deadline' | null>(null);
 
   // Plan Completion Feedback
   const [showCompletionFeedback, setShowCompletionFeedback] = useState(false);
@@ -363,7 +376,7 @@ const PlanDetail: React.FC = () => {
         const res = await aiService.analyzeDelay(plan.id);
         const strategyLabel = res.strategy === 'reschedule'
           ? '📅 **Dồn lại lịch:** Sắp xếp các task trễ sang những ngày còn trống, giữ nguyên deadline chung.'
-          : '📆 **Mở rộng deadline:** Thời gian còn lại quá ít, AI đề xuất điều chỉnh deadline tổng thể.';
+          : '📆 **Mở rộng deadline:** Thời gian còn lại quá ít, AI đề xuất điều chỉnh deadline tổng thể và sắp xếp lại các subtask trễ.';
 
         const summaryMsg = `**📊 Phân tích trễ tiến độ:**
 - 🔴 Số task quá hạn: **${res.overdueCount} task**
@@ -376,6 +389,7 @@ Bạn có muốn áp dụng đề xuất này không?
 [APPLY_DELAY_FIX]`;
 
         setPendingDelayPlanData(res.proposedPlanData);
+        setPendingDelayStrategy(res.strategy as 'reschedule' | 'extend_deadline');
         setChatMessages(prev => {
           const updated = [...prev];
           updated[updated.length - 1] = { role: 'assistant', content: summaryMsg };
@@ -404,6 +418,7 @@ Bạn có muốn áp dụng đề xuất này không?
     try {
       await aiService.applyDelayFix(plan.id, pendingDelayPlanData);
       setPendingDelayPlanData(null);
+      setPendingDelayStrategy(null);
       showToast('Đã áp dụng đề xuất AI thành công!', 'success');
       await fetchPlanDetails();
       setChatMessages(prev => [
@@ -414,6 +429,58 @@ Bạn có muốn áp dụng đề xuất này không?
       setChatMessages(prev => [
         ...prev,
         { role: 'assistant', content: `❌ Áp dụng thất bại: ${err.message}` }
+      ]);
+    } finally {
+      setIsChatLoading(false);
+    }
+  };
+
+  // ── Reject delay fix: gọi lại AI với strategy ngược lại ─────────────────────
+  const handleRejectDelayFix = async () => {
+    if (!plan?.id || !pendingDelayStrategy) return;
+
+    // Flip sang strategy ngược lại
+    const oppositeStrategy = pendingDelayStrategy === 'reschedule' ? 'extend_deadline' : 'reschedule';
+    const oppositeLabel = oppositeStrategy === 'reschedule'
+      ? '📅 Dồn lại lịch (giữ nguyên deadline chung)'
+      : '📆 Mở rộng deadline tổng thể';
+
+    setIsChatLoading(true);
+    setPendingDelayPlanData(null);
+    setPendingDelayStrategy(null);
+    setChatMessages(prev => [
+      ...prev,
+      { role: 'user', content: '❌ Tôi không đồng ý. Hãy thử phương án khác.' },
+      { role: 'assistant', content: `🔄 Được, tôi sẽ áp dụng phương án **${oppositeLabel}**. Đang phân tích lại...` }
+    ]);
+
+    try {
+      const res = await aiService.analyzeDelay(plan.id, oppositeStrategy);
+      const strategyLabel = res.strategy === 'reschedule'
+        ? '📅 **Dồn lại lịch:** Sắp xếp các task trễ sang những ngày còn trống, giữ nguyên deadline chung.'
+        : '📆 **Mở rộng deadline:** AI đề xuất điều chỉnh deadline tổng thể và sắp xếp lại các subtask trễ.';
+
+      const summaryMsg = `**📊 Phương án thay thế:**
+- 🔴 Số task quá hạn: **${res.overdueCount} task**
+- ⏰ Thời gian đến deadline: **${res.daysToDeadline} ngày**
+- Chiến lược mới: ${strategyLabel}
+
+${res.message}
+
+Bạn có muốn áp dụng phương án này không?
+[APPLY_DELAY_FIX]`;
+
+      setPendingDelayPlanData(res.proposedPlanData);
+      setPendingDelayStrategy(res.strategy as 'reschedule' | 'extend_deadline');
+      setChatMessages(prev => {
+        const updated = [...prev];
+        updated[updated.length - 1] = { role: 'assistant', content: summaryMsg };
+        return updated;
+      });
+    } catch (err: any) {
+      setChatMessages(prev => [
+        ...prev,
+        { role: 'assistant', content: `❌ Không thể phân tích phương án thay thế: ${err.message}` }
       ]);
     } finally {
       setIsChatLoading(false);
@@ -1330,7 +1397,7 @@ Bạn có muốn áp dụng đề xuất này không?
                       ? 'bg-primary text-white rounded-tr-none shadow-xs shadow-primary/10' 
                       : 'bg-white text-gray-700 rounded-tl-none border border-gray-100 shadow-xs'
                   }`}>
-                    {msg.role === 'user' ? msg.content : <FormattedMessage content={msg.content} onApplyAction={handleApplyDelayFix} />}
+                    {msg.role === 'user' ? msg.content : <FormattedMessage content={msg.content} onApplyAction={handleApplyDelayFix} onRejectAction={pendingDelayStrategy ? handleRejectDelayFix : undefined} />}
                   </div>
                 </div>
               </div>
