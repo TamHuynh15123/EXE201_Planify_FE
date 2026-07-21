@@ -7,10 +7,11 @@ import {
   TrendingDown,
   Search,
   Shield,
-  UserCheck
+  UserCheck,
+  UserPlus
 } from 'lucide-react';
 import { subscriptionService } from '../../services/subscriptionService';
-import { userService, UserAdminResponse } from '../../services/userService';
+import { userService, UserAdminResponse, UserGrowthStats } from '../../services/userService';
 
 interface ChartPoint {
   year: number;
@@ -35,14 +36,19 @@ const AdminDashboard: React.FC = () => {
     yearlyRevenue: Array<{ year: number; revenue: number }>;
   } | null>(null);
   const [usersList, setUsersList] = useState<UserAdminResponse[]>([]);
+  const [growthStats, setGrowthStats] = useState<UserGrowthStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingUsers, setIsLoadingUsers] = useState(true);
+  const [isLoadingGrowth, setIsLoadingGrowth] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeRange, setActiveRange] = useState<'7d' | '30d' | '12m'>('12m');
-  
+  const [growthRange, setGrowthRange] = useState<'7d' | '19d' | '30d'>('19d');
+
   // Interactive chart state
   const [hoveredPoint, setHoveredPoint] = useState<{ x: number; y: number; day?: number; month: number; year: number; revenue: number } | null>(null);
+  const [hoveredGrowthIdx, setHoveredGrowthIdx] = useState<number | null>(null);
   const chartRef = useRef<SVGSVGElement>(null);
+  const growthChartRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -70,6 +76,25 @@ const AdminDashboard: React.FC = () => {
     fetchStats();
     fetchUsers();
   }, []);
+
+  // Fetch growth stats whenever growthRange changes
+  useEffect(() => {
+    const fetchGrowth = async () => {
+      setIsLoadingGrowth(true);
+      try {
+        const days = growthRange === '7d' ? 6 : growthRange === '19d' ? 18 : 29;
+        const to = new Date().toISOString().slice(0, 10);
+        const from = new Date(Date.now() - days * 86400000).toISOString().slice(0, 10);
+        const res = await userService.adminGetGrowthStats(from, to);
+        setGrowthStats(res.data ?? (res as any));
+      } catch (e) {
+        console.error('Error fetching growth stats:', e);
+      } finally {
+        setIsLoadingGrowth(false);
+      }
+    };
+    fetchGrowth();
+  }, [growthRange]);
 
   const totalRevenue = revenueStats?.totalRevenue || 0;
   const successCount = revenueStats?.successCount || 0;
@@ -501,6 +526,185 @@ const AdminDashboard: React.FC = () => {
             })}
           </div>
         </div>
+      </div>
+
+      {/* ── User Growth Section ───────────────────────────────────── */}
+      <div className="bg-white rounded-3xl border border-slate-100 shadow-sm shadow-slate-100/30 p-8">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+          <div className="space-y-1">
+            <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
+              <UserPlus size={18} className="text-emerald-600" />
+              Tăng trưởng người dùng
+            </h2>
+            <p className="text-xs font-medium text-slate-400">Số lượng tài khoản đăng ký mới theo thời gian.</p>
+          </div>
+          {/* Range selector */}
+          <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-xl border border-slate-200/50">
+            {(['7d', '19d', '30d'] as const).map((r) => (
+              <button
+                key={r}
+                onClick={() => setGrowthRange(r)}
+                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                  growthRange === r ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'
+                }`}
+              >
+                {r === '7d' ? '7 ngày' : r === '19d' ? '19 ngày' : '30 ngày'}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Growth KPI mini-cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+          {[
+            { label: 'Tổng users', value: growthStats?.totalUsers ?? 0, color: 'text-indigo-600', bg: 'bg-indigo-50 border-indigo-100/40' },
+            { label: 'Mới trong kỳ', value: growthStats?.newUsers ?? 0, color: 'text-emerald-600', bg: 'bg-emerald-50 border-emerald-100/40' },
+            { label: '7 ngày gần nhất', value: growthStats?.newUsersLast7Days ?? 0, color: 'text-amber-600', bg: 'bg-amber-50 border-amber-100/40' },
+            { label: '30 ngày gần nhất', value: growthStats?.newUsersLast30Days ?? 0, color: 'text-sky-600', bg: 'bg-sky-50 border-sky-100/40' },
+          ].map((kpi) => (
+            <div key={kpi.label} className={`rounded-2xl border p-4 ${kpi.bg}`}>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">{kpi.label}</p>
+              <p className={`text-2xl font-black ${kpi.color}`}>
+                {isLoadingGrowth ? '—' : kpi.value.toLocaleString('vi-VN')}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {/* Growth Rate Badge */}
+        {!isLoadingGrowth && growthStats?.growthRatePercent != null && (
+          <div className="mb-6 flex items-center gap-2">
+            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+              growthStats.growthRatePercent >= 0
+                ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                : 'bg-rose-50 text-rose-600 border border-rose-100'
+            }`}>
+              {growthStats.growthRatePercent >= 0 ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
+              {growthStats.growthRatePercent >= 0 ? '+' : ''}{growthStats.growthRatePercent}% so với kỳ trước
+            </span>
+          </div>
+        )}
+
+        {/* Growth line chart (SVG, same style as revenue chart) */}
+        {isLoadingGrowth ? (
+          <div className="flex items-center justify-center h-48">
+            <div className="w-7 h-7 border-2 border-emerald-600/20 border-t-emerald-600 rounded-full animate-spin" />
+          </div>
+        ) : (() => {
+          const daily = growthStats?.dailyRegistrations ?? [];
+          if (daily.length === 0) return (
+            <div className="flex items-center justify-center h-48 text-sm font-bold text-slate-400">Không có dữ liệu</div>
+          );
+          const gW = 600; const gH = 180; const gPX = 40; const gPY = 20;
+          const gChartW = gW - gPX * 2; const gChartH = gH - gPY * 2;
+          const maxCnt = Math.max(...daily.map(d => d.count), 1);
+          const gPts = daily.map((d, i) => ({
+            x: daily.length <= 1 ? gPX + gChartW / 2 : gPX + (i / (daily.length - 1)) * gChartW,
+            y: gPY + gChartH - (d.count / maxCnt) * gChartH,
+            ...d,
+          }));
+          const gLine = gPts.reduce((p, pt, i) => i === 0 ? `M ${pt.x} ${pt.y}` : `${p} L ${pt.x} ${pt.y}`, '');
+          const gArea = gPts.length > 0
+            ? `${gLine} L ${gPts[gPts.length - 1].x} ${gPY + gChartH} L ${gPts[0].x} ${gPY + gChartH} Z`
+            : '';
+          const xShow = daily.length <= 7
+            ? daily.map((_, i) => i)
+            : [0, ...Array.from({ length: 4 }, (_, k) => Math.round((k + 1) * (daily.length - 1) / 5)), daily.length - 1];
+
+          return (
+            <div className="relative">
+              <svg
+                ref={growthChartRef}
+                className="w-full h-48 overflow-visible cursor-crosshair"
+                viewBox={`0 0 ${gW} ${gH}`}
+                onMouseLeave={() => setHoveredGrowthIdx(null)}
+              >
+                <defs>
+                  <linearGradient id="growthGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#10b981" stopOpacity="0.18" />
+                    <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
+                  </linearGradient>
+                </defs>
+
+                {/* Grid lines */}
+                {[0, 1, 2, 3].map(g => {
+                  const gy = gPY + (g / 3) * gChartH;
+                  return <line key={g} x1={gPX} y1={gy} x2={gW - gPX} y2={gy} stroke="#f1f5f9" strokeWidth="1" strokeDasharray="4 4" />;
+                })}
+
+                {/* Area + Line */}
+                {gArea && <path d={gArea} fill="url(#growthGrad)" />}
+                {gLine && <path d={gLine} fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />}
+
+                {/* Dots */}
+                {gPts.map((p, i) => (
+                  <circle key={i} cx={p.x} cy={p.y} r="4" fill="white" stroke="#10b981" strokeWidth="2" />
+                ))}
+
+                {/* X labels */}
+                {xShow.map(i => (
+                  <text key={i} x={gPts[i].x} y={gH - 2} textAnchor="middle" fontSize={9} fill="#94a3b8" fontWeight="700">
+                    {daily[i]?.date?.slice(5)}
+                  </text>
+                ))}
+
+                {/* Hover areas */}
+                {gPts.map((p, i) => (
+                  <rect
+                    key={i}
+                    x={i === 0 ? gPX : (gPts[i - 1].x + p.x) / 2}
+                    y={gPY}
+                    width={
+                      i === 0 ? (gPts[1]?.x ?? p.x + 20) / 2 - gPX
+                      : i === gPts.length - 1 ? p.x - (gPts[i - 1].x + p.x) / 2
+                      : ((gPts[i + 1].x + p.x) / 2) - ((gPts[i - 1].x + p.x) / 2)
+                    }
+                    height={gChartH}
+                    fill="transparent"
+                    onMouseEnter={() => setHoveredGrowthIdx(i)}
+                    onMouseMove={() => setHoveredGrowthIdx(i)}
+                  />
+                ))}
+
+                {/* Hover highlight */}
+                {hoveredGrowthIdx !== null && gPts[hoveredGrowthIdx] && (
+                  <g>
+                    <line
+                      x1={gPts[hoveredGrowthIdx].x} y1={gPY}
+                      x2={gPts[hoveredGrowthIdx].x} y2={gPY + gChartH}
+                      stroke="#10b981" strokeWidth="1.5" strokeDasharray="2 2"
+                    />
+                    <circle cx={gPts[hoveredGrowthIdx].x} cy={gPts[hoveredGrowthIdx].y}
+                      r="6" fill="#10b981" fillOpacity="0.2" />
+                    <circle cx={gPts[hoveredGrowthIdx].x} cy={gPts[hoveredGrowthIdx].y}
+                      r="4" fill="#10b981" stroke="white" strokeWidth="2" />
+                  </g>
+                )}
+              </svg>
+
+              {/* Tooltip */}
+              {hoveredGrowthIdx !== null && daily[hoveredGrowthIdx] && (() => {
+                const p = gPts[hoveredGrowthIdx];
+                const svgEl = growthChartRef.current;
+                const pct = svgEl ? (p.x / gW) * 100 : 50;
+                return (
+                  <div
+                    className="absolute bg-slate-900 text-white rounded-xl p-3 shadow-xl pointer-events-none z-20 space-y-0.5"
+                    style={{ left: `${Math.min(pct, 85)}%`, top: `${Math.max((p.y / gH) * 100 - 28, 0)}%`, transform: 'translateX(-50%)' }}
+                  >
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                      {daily[hoveredGrowthIdx].date}
+                    </p>
+                    <p className="text-sm font-black text-emerald-400">
+                      {daily[hoveredGrowthIdx].count} người đăng ký
+                    </p>
+                  </div>
+                );
+              })()}
+            </div>
+          );
+        })()}
       </div>
 
       {/* User Accounts Directory Table */}

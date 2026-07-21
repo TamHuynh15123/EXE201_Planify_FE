@@ -11,7 +11,8 @@ import {
   Globe,
   Grid,
   BookOpen,
-  MessageSquare
+  MessageSquare,
+  TrendingUp
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -25,6 +26,7 @@ const AdminSidebar: React.FC = () => {
     { icon: <BookOpen size={20} />, label: 'Templates', path: '/admin/templates' },
     { icon: <Globe size={20} />, label: 'Duyệt kế hoạch', path: '/admin/community-plans' },
     { icon: <Users size={20} />, label: 'Người dùng', path: '/admin/users' },
+    { icon: <TrendingUp size={20} />, label: 'Tăng trưởng', path: '/admin/user-growth' },
     { icon: <MessageSquare size={20} />, label: 'Feedback', path: '/admin/feedbacks' },
     { icon: <Settings size={20} />, label: 'Cài đặt', path: '/admin/settings' },
   ];

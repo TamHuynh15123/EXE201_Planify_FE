@@ -23,6 +23,20 @@ export interface OnboardingStatus {
   shouldShowTour: boolean;
 }
 
+export interface DailyRegistration {
+  date: string; // "YYYY-MM-DD"
+  count: number;
+}
+
+export interface UserGrowthStats {
+  totalUsers: number;
+  newUsers: number;
+  newUsersLast7Days: number;
+  newUsersLast30Days: number;
+  growthRatePercent: number | null;
+  dailyRegistrations: DailyRegistration[];
+}
+
 export const userService = {
   async getProfile(): Promise<ApiResponse<UserProfile>> {
     return apiClient('/User/profile', {
@@ -34,6 +48,14 @@ export const userService = {
     return apiClient('/admin/users', {
       method: 'GET',
     });
+  },
+
+  async adminGetGrowthStats(from?: string, to?: string): Promise<ApiResponse<UserGrowthStats>> {
+    const params = new URLSearchParams();
+    if (from) params.append('from', from);
+    if (to) params.append('to', to);
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return apiClient(`/admin/users/growth-stats${query}`, { method: 'GET' });
   },
 
   async getOnboardingStatus(): Promise<ApiResponse<OnboardingStatus>> {
@@ -49,4 +71,3 @@ export const userService = {
     });
   },
 };
-
