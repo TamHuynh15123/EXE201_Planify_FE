@@ -12,6 +12,8 @@ import {
 } from 'lucide-react';
 import { subscriptionService } from '../../services/subscriptionService';
 import { userService, UserAdminResponse, UserGrowthStats } from '../../services/userService';
+import { planService } from '../../services/planService';
+import { BarChart2, CheckCircle2, ListTodo, Target } from 'lucide-react';
 
 interface ChartPoint {
   year: number;
@@ -37,6 +39,8 @@ const AdminDashboard: React.FC = () => {
   } | null>(null);
   const [usersList, setUsersList] = useState<UserAdminResponse[]>([]);
   const [growthStats, setGrowthStats] = useState<UserGrowthStats | null>(null);
+  const [planStats, setPlanStats] = useState<{ totalPlans: number; completedPlans: number; activePlans: number } | null>(null);
+  const [isLoadingPlanStats, setIsLoadingPlanStats] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingUsers, setIsLoadingUsers] = useState(true);
   const [isLoadingGrowth, setIsLoadingGrowth] = useState(true);
@@ -75,6 +79,19 @@ const AdminDashboard: React.FC = () => {
 
     fetchStats();
     fetchUsers();
+
+    // Fetch system-wide plan stats
+    const fetchPlanStats = async () => {
+      try {
+        const res = await planService.getSystemStats();
+        setPlanStats(res as any);
+      } catch (e) {
+        console.error('Error fetching plan stats:', e);
+      } finally {
+        setIsLoadingPlanStats(false);
+      }
+    };
+    fetchPlanStats();
   }, []);
 
   // Fetch growth stats whenever growthRange changes
@@ -705,6 +722,135 @@ const AdminDashboard: React.FC = () => {
             </div>
           );
         })()}
+      </div>
+
+      {/* ── Plan Statistics Section ────────────────────────────────────── */}
+      <div className="bg-white rounded-3xl border border-slate-100 shadow-sm shadow-slate-100/30 p-8">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+          <div className="space-y-1">
+            <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
+              <BarChart2 size={18} className="text-violet-600" />
+              Thống kê kế hoạch
+            </h2>
+            <p className="text-xs font-medium text-slate-400">Số lượng kế hoạch toàn hệ thống — đã tạo, đã hoàn thành, đang thực hiện.</p>
+          </div>
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-violet-50 border border-violet-100 text-[10px] font-black uppercase tracking-wider text-violet-600">
+            <span className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse" />
+            Dữ liệu hệ thống
+          </span>
+        </div>
+
+        {isLoadingPlanStats ? (
+          <div className="flex items-center justify-center h-48">
+            <div className="w-7 h-7 border-2 border-violet-600/20 border-t-violet-600 rounded-full animate-spin" />
+          </div>
+        ) : (
+          <div className="flex flex-col lg:flex-row gap-10 items-center">
+            {/* Donut Chart */}
+            <div className="relative flex-shrink-0">
+              {(() => {
+                const total = planStats?.totalPlans ?? 0;
+                const completed = planStats?.completedPlans ?? 0;
+                const active = planStats?.activePlans ?? 0;
+                const r = 70;
+                const cx = 90; const cy = 90;
+                const circumference = 2 * Math.PI * r;
+                const completedPct = total > 0 ? completed / total : 0;
+                const activePct = total > 0 ? active / total : 0;
+                const completedLen = completedPct * circumference;
+                const activeLen = activePct * circumference;
+                const gap = total > 0 ? 3 : 0;
+                return (
+                  <svg width="180" height="180" viewBox="0 0 180 180">
+                    {/* Background track */}
+                    <circle cx={cx} cy={cy} r={r} fill="none" stroke="#f1f5f9" strokeWidth="16" />
+                    {total === 0 ? (
+                      <circle cx={cx} cy={cy} r={r} fill="none" stroke="#e2e8f0" strokeWidth="16" strokeDasharray={`${circumference}`} strokeDashoffset="0" strokeLinecap="round" transform={`rotate(-90 ${cx} ${cy})`} />
+                    ) : (
+                      <>
+                        {/* Completed segment — violet */}
+                        <circle
+                          cx={cx} cy={cy} r={r} fill="none"
+                          stroke="#7c3aed"
+                          strokeWidth="16"
+                          strokeDasharray={`${Math.max(completedLen - gap, 0)} ${circumference}`}
+                          strokeDashoffset="0"
+                          strokeLinecap="round"
+                          transform={`rotate(-90 ${cx} ${cy})`}
+                          style={{ transition: 'stroke-dasharray 0.8s cubic-bezier(.4,0,.2,1)' }}
+                        />
+                        {/* Active segment — sky */}
+                        <circle
+                          cx={cx} cy={cy} r={r} fill="none"
+                          stroke="#38bdf8"
+                          strokeWidth="16"
+                          strokeDasharray={`${Math.max(activeLen - gap, 0)} ${circumference}`}
+                          strokeDashoffset={-(completedLen)}
+                          strokeLinecap="round"
+                          transform={`rotate(-90 ${cx} ${cy})`}
+                          style={{ transition: 'stroke-dasharray 0.8s cubic-bezier(.4,0,.2,1)' }}
+                        />
+                      </>
+                    )}
+                    {/* Center label */}
+                    <text x={cx} y={cy - 8} textAnchor="middle" fontSize="22" fontWeight="900" fill="#1e293b">
+                      {total}
+                    </text>
+                    <text x={cx} y={cy + 12} textAnchor="middle" fontSize="9" fontWeight="700" fill="#94a3b8">
+                      TỔNG KẾ HOẠCH
+                    </text>
+                  </svg>
+                );
+              })()}
+              {/* Legend */}
+              <div className="flex justify-center gap-5 mt-2">
+                <span className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500">
+                  <span className="w-2.5 h-2.5 rounded-full bg-violet-600" />
+                  Hoàn thành
+                </span>
+                <span className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500">
+                  <span className="w-2.5 h-2.5 rounded-full bg-sky-400" />
+                  Đang thực hiện
+                </span>
+              </div>
+            </div>
+
+            {/* KPI Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 flex-1 w-full">
+              {[
+                {
+                  label: 'Tổng kế hoạch',
+                  value: planStats?.totalPlans ?? 0,
+                  icon: <ListTodo size={18} className="text-slate-600" />,
+                  bg: 'bg-slate-50 border-slate-200/50',
+                  color: 'text-slate-900',
+                },
+                {
+                  label: 'Đã hoàn thành',
+                  value: planStats?.completedPlans ?? 0,
+                  icon: <CheckCircle2 size={18} className="text-violet-600" />,
+                  bg: 'bg-violet-50 border-violet-100/60',
+                  color: 'text-violet-700',
+                },
+                {
+                  label: 'Đang thực hiện',
+                  value: planStats?.activePlans ?? 0,
+                  icon: <Target size={18} className="text-sky-500" />,
+                  bg: 'bg-sky-50 border-sky-100/60',
+                  color: 'text-sky-700',
+                },
+              ].map((kpi) => (
+                <div key={kpi.label} className={`rounded-2xl border p-5 flex flex-col gap-3 ${kpi.bg}`}>
+                  <div className="flex justify-between items-center">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{kpi.label}</p>
+                    <span className="p-1.5 bg-white rounded-xl border border-slate-100 shadow-xs">{kpi.icon}</span>
+                  </div>
+                  <p className={`text-3xl font-black tracking-tight ${kpi.color}`}>{kpi.value}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* User Accounts Directory Table */}

@@ -21,7 +21,7 @@ import AdminPlanTemplates from './pages/admin/AdminPlanTemplates'
 import AdminCommunityPlans from './pages/admin/AdminCommunityPlans'
 import AdminUsers from './pages/admin/AdminUsers'
 import AdminFeedbacks from './pages/admin/AdminFeedbacks'
-import AdminUserGrowth from './pages/admin/AdminUserGrowth'
+
 import AIChat from './components/AIChat'
 import OnboardingTour from './components/OnboardingTour'
 import Payment from './pages/Payment'
@@ -62,7 +62,7 @@ function AppContent() {
             <Route path="/admin/templates" element={<AdminPlanTemplates />} />
             <Route path="/admin/community-plans" element={<AdminCommunityPlans />} />
             <Route path="/admin/users" element={<AdminUsers />} />
-            <Route path="/admin/user-growth" element={<AdminUserGrowth />} />
+
             <Route path="/admin/feedbacks" element={<AdminFeedbacks />} />
             <Route path="/admin/settings" element={<div className="p-8">Cài đặt hệ thống (Coming soon)</div>} />
           </Route>

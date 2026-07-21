@@ -65,5 +65,13 @@ export const planService = {
     return apiClient(`/Plans/${planId}/tasks/${taskId}`, {
       method: 'DELETE',
     });
-  }
+  },
+
+  async getStats(): Promise<{ totalPlans: number; completedPlans: number; activePlans: number; completionRate: number }> {
+    return apiClient('/Plans/stats', { method: 'GET' });
+  },
+
+  async getSystemStats(): Promise<{ totalPlans: number; completedPlans: number; activePlans: number; completionRate: number }> {
+    return apiClient('/Plans/system-stats', { method: 'GET' });
+  },
 };
